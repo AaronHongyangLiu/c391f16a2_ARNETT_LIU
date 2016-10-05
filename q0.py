@@ -11,6 +11,11 @@ def main(filename):
     maxLon = 11.72400
     deltaLon = maxLon - minLon
 
+    latPerTenMeter = 10.0/111191
+    lonPerTenMeter = 10.0/74539
+    height = (latPerTenMeter/deltaLat) * 1000
+    width = (lonPerTenMeter/deltaLon) * 1000
+
     infile = open(filename, 'r')
     lines = infile.readlines()
     infile.close()
@@ -21,7 +26,11 @@ def main(filename):
         items = line.split('\t')
         newLat = ((float(items[2]) - minLat) / deltaLat) * 1000
         newLon = ((float(items[3]) - minLon) / deltaLon) * 1000
-        outfile.write("%s\t%s\t%s\t%s\t%f\t%f\n" % (items[0], items[1], items[2], items[3], newLat, newLon))
+        minX = newLon
+        maxX = newLon + width
+        minY = newLat - height
+        maxY = newLat
+        outfile.write("%s\t%s\t%s\t%s\t%f\t%f\t%f\t%f\t%f\t%f\n" % (items[0], items[1], items[2], items[3], newLat, newLon, minX, maxX, minY, maxY))
 
     outfile.close()
 
