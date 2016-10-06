@@ -1,0 +1,12 @@
+Note: Make sure you have run q0.py before using these commands
+
+CREATE virtual TABLE poi_index using rtree(
+	id int PRIMARY KEY,
+	minX float,
+	maxX float,
+	minY float,
+	maxY float);
+
+.mode tab
+
+.import ./rtreeData.tsv poi_index

@@ -7,10 +7,10 @@ CREATE TABLE poi(
 	lat float,
 	lon float,
 	newLat float,
-	newLon float
-	minX float
-	maxX float
-	minY float
+	newLon float,
+	minX float,
+	maxX float,
+	minY float,
 	maxY float);
 
 CREATE TABLE poi_tag(
