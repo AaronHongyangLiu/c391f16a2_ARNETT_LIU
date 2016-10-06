@@ -21,17 +21,33 @@ def calculate_area(box):
     return ((box[2] - box[0]) * (box[1] - box[3]))  # width * height
 
 
-rectangles = [  # [x1,y1,x2,y2]
-                [2, 25, 5, 23], [3, 20, 7, 17], [1, 15, 4, 13], [1, 3, 4, 0],
-                [6, 24, 9, 21], [7, 20, 9, 15], [6, 8, 13, 3], [17, 22, 20, 9],
-                [19, 12, 24, 9], [19, 8, 23, 6], [21, 25, 26, 21],
-                [20, 17, 30, 15], [25, 16, 28, 12], [13, 22, 17, 19]
-]
 
 
-### TESTING CODE ###
-test_node = [0, 1, 1, 0]
-test_box = [1, 2, 2, 1]
+R1 = [2, 25, 5, 23]
+R2 =[3, 20, 7, 17]
+R3 = [1, 15, 4, 13]
+R4 = [1, 3, 4, 0]
+R5 = [6, 24, 9, 21]
+R6 = [7, 20, 9, 15]
+R7 = [6, 8, 13, 3]
+R8 = [17, 22, 20, 9]
+R9 = [19, 12, 24, 9]
+R10 = [19, 8, 23, 6]
+R11 = [21, 25, 26, 21]
+R12 = [20, 17, 30, 15]
+R13 = [25, 16, 28, 12]
+R14 = [13, 22, 17, 19]
 
-change = calculate_increasing_area(original_box=test_node, new_box=test_box)
-print change  # should print 3
+
+
+
+original_boxpr = [R3[0],R3[1],R7[2],0] # PURPLE
+original_boxp = [R1[0],R1[1],R5[2],R2[3]] # PINK
+original_boxr = [R6[0],R8[1],R8[2],R8[3]] # RED
+original_boxg = [R9[0],R11[1],R11[2],R10[3]] # GREEN
+
+
+new_box = R12
+
+change = calculate_increasing_area(original_box=original_boxg, new_box=new_box)
+print change
