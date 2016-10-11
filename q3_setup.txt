@@ -1,0 +1,10 @@
+create virtual table q3 using rtree(
+	id int PRIMARY KEY,
+	minX float,
+	maxX float,
+	minY float,
+	maxY float);
+
+.mode tabs
+
+.import ./q3.tsv q3
