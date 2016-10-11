@@ -1,5 +1,5 @@
-Note: Before you run the sqlite3 command,
-      run q0.py first by the command: python q0.py poi.tsv
+-- Note: Before you run the sqlite3 command,
+--       run q0.py first by the command: python q0.py poi.tsv
 
 CREATE TABLE poi(
 	id int PRIMARY KEY,
@@ -18,7 +18,7 @@ CREATE TABLE poi_tag(
 	key text,
 	value text);
 
-.mode tab
+.mode tabs
 
 .import ./newData.tsv poi
 
