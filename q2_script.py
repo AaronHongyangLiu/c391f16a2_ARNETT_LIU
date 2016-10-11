@@ -40,14 +40,13 @@ R14 = [13, 22, 17, 19]
 
 
 
-
-original_boxpr = [R3[0],R3[1],R7[2],0] # PURPLE
-original_boxp = [R1[0],R1[1],R5[2],R2[3]] # PINK
-original_boxr = [R6[0],R8[1],R8[2],R8[3]] # RED
-original_boxg = [R9[0],R11[1],R11[2],R10[3]] # GREEN
+# original_boxpr = [R3[0],R3[1],R7[2],0] # PURPLE
+# original_boxp = [R1[0],R1[1],R5[2],R2[3]] # PINK
+# original_boxr = [R6[0],R8[1],R8[2],R8[3]] # RED
+# original_boxg = [R9[0],R11[1],R11[2],R10[3]] # GREEN
 
 
 new_box = R12
 
-change = calculate_increasing_area(original_box=original_boxg, new_box=new_box)
+change = calculate_increasing_area(original_box=R11, new_box=R13)
 print change

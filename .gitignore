@@ -6,6 +6,7 @@ sites
 *.ko
 *.obj
 *.elf
+CMakeLists.txt
 
 # Precompiled Headers
 *.gch
@@ -45,3 +46,7 @@ dkms.conf
 
 # MAC OSX FILES
 .DS_Store
+
+# OTHERS
+.idea/
+*.db
