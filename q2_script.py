@@ -14,7 +14,7 @@ def calculate_increasing_area(original_box, new_box):
 
     result_box_area = calculate_area(result_box)
 
-    return "Box %s increases %d units" % (str(original_box), abs(result_box_area - original_box_area))
+    return "Box %s increases %d units\n" % (str(original_box), abs(result_box_area - original_box_area))
 
 
 def calculate_area(box):
@@ -48,5 +48,11 @@ R14 = [13, 22, 17, 19]
 
 new_box = R12
 
-change = calculate_increasing_area(original_box=R11, new_box=R13)
-print change
+change = calculate_increasing_area(original_box=[7,25,30,15], new_box=R13)
+change1 = calculate_increasing_area(original_box=[17,22,24,6], new_box=R13)
+change2= calculate_increasing_area(original_box=R6, new_box=R8)
+change3 = calculate_increasing_area(original_box=R6, new_box=R11)
+change4 = calculate_increasing_area(original_box=R4, new_box=R3)
+change5 = calculate_increasing_area(original_box=R3, new_box=R5)
+
+print '0',change,'1',change1 #,'2',change2,'3',change3,'4',change4,'5',change5

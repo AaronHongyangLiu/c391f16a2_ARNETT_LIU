@@ -8,9 +8,10 @@
 int MAX_BOUNDING_SQUARES = 10; // from assignment request
 int QUERY_RUNS = 20;
 
+float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_Y);
+
 int main(int argc, char **argv) {
     sqlite3 *db; //the database
-    sqlite3_stmt *stmt; //the update statement
     srand(time(
             NULL)); //for generating random numbers (from http://stackoverflow.com/questions/822323/how-to-generate-a-random-number-in-c)
 
@@ -55,7 +56,10 @@ int main(int argc, char **argv) {
 
 
 float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_Y){
-    int msec = 0;
+    float time = 0;
+    int rc;
+    sqlite3_stmt *stmt; //the update statement
+
     char *stmt_1 = (" SELECT DISTINCT s.id    \
                             FROM std_index s, \
                             WHERE s.minX > ");
@@ -102,4 +106,4 @@ float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_
 //
 //
 //
-}
+
