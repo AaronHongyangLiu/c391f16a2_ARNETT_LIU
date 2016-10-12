@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <sqlite3.h>
 #include <string.h>
+#include <stdlib.h>
 
-// TODO this will be used if the coordinate input has brackets
-// int MAX_COORDINATE_LEN =  8; // Two brackets, a comma and two 3 digit coordinates = 8
 
 int main(int argc, char **argv) {
     sqlite3 *db; //the database
@@ -12,8 +11,6 @@ int main(int argc, char **argv) {
     int rc;
 
     if (argc != 7) {
-        // TODO this will be used if the coordinate input has brackets
-        // fprintf(stderr, "Usage: %s <database file> <(x1,y1)> <(x2,y2)> <POI class name>\n", argv[0]);
         fprintf(stderr, "Usage: %s <database file> <x1> <y1> <x2> <y2> <POI class name>\n", argv[0]);
         return (1);
     }
@@ -25,19 +22,21 @@ int main(int argc, char **argv) {
         return (1);
     }
 
-    // TODO this will be used if the coordinate input has brackets
-    // Grab the top left coordinates as x1,y1 before splitting by the comma
-    // char top_left[MAX_COORDINATE_LEN];
-    // memset(top_left, '\0', MAX_COORDINATE_LEN); // set to null bytes
-    // int top_left_len = strlen(argv[2]) - 2; // subtract 2 to get rid of closing bracket and null byte
-    // strncpy(top_left,argv[2]+1, top_left_len); // add one to get rid of opening bracket
-    // printf("%s\n", top_left);
+    // Set arguments
+    char *minX = argv[2];
+    char *maxX = argv[4];
+    char *minY = argv[5];
+    char *maxY = argv[3];
 
-//    DEBUGGING TODO remove before submission
-//    printf("x1 = %s\n",argv[2]);
-//    printf("y1 = %s\n",argv[3]);
-//    printf("x2 = %s\n",argv[4]);
-//    printf("y2 = %s\n",argv[5]);
+    //error checking
+    if (atoi(minX) >= atoi(maxX)) {
+        fprintf(stderr, "x1 must be less than x2 [%s is not less than %s]\n", minX, maxX);
+        exit(1);
+    }
+    if (atoi(minY) >= atoi(maxY)) {
+        fprintf(stderr, "y1 must be greater than y2 [%s is not greater than %s]\n", maxY, minY);
+        exit(1);
+    }
 
     char *stmt_1 = (" SELECT DISTINCT t.id              \
                             FROM poi_tag t, poi_index i \
@@ -54,19 +53,19 @@ int main(int argc, char **argv) {
     // initialize the statement of appropriate length
     char sql_stmt[strlen(stmt_1) + strlen(stmt_2) + strlen(stmt_3) + \
                   strlen(stmt_4) + strlen(stmt_5) + strlen(stmt_6) + \
-                  strlen(argv[6]) + strlen(argv[2]) + strlen(argv[3]) + \
-                  strlen(argv[4]) + strlen(argv[5])];
+                  strlen(argv[6]) + strlen(minX) + strlen(minY) + \
+                  strlen(maxX) + strlen(maxY)];
 
     strcpy(sql_stmt, stmt_1);
     strcat(sql_stmt, argv[6]);
     strcat(sql_stmt, stmt_2);
-    strcat(sql_stmt, argv[2]);
+    strcat(sql_stmt, minX);
     strcat(sql_stmt, stmt_3);
-    strcat(sql_stmt, argv[4]);
+    strcat(sql_stmt, maxX);
     strcat(sql_stmt, stmt_4);
-    strcat(sql_stmt, argv[5]);
+    strcat(sql_stmt, minY);
     strcat(sql_stmt, stmt_5);
-    strcat(sql_stmt, argv[3]);
+    strcat(sql_stmt, maxY);
     strcat(sql_stmt, stmt_6);
 
     rc = sqlite3_prepare_v2(db, sql_stmt, -1, &stmt, 0);
