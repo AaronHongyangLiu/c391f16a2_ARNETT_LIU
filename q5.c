@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
 
 
 float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_Y){
+    int msec = 0;
     char *stmt_1 = (" SELECT DISTINCT s.id    \
                             FROM std_index s, \
                             WHERE s.minX > ");
@@ -80,9 +81,10 @@ float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_
 
     printf("%s\n", sql_stmt);
 
-    //TODO start timer here
+    clock_t before = clock(); // start timer
     rc = sqlite3_prepare_v2(*db_ptr, sql_stmt, -1, &stmt, 0);
-    // TODO end timer here
+    clock_t difference = clock() - before; // stop timer
+    time = difference * 1000 / CLOCKS_PER_SEC;
 
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(*db_ptr));
@@ -91,7 +93,7 @@ float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_
 
     sqlite3_finalize(stmt);
 
-    return 0.0; //TODO change to time variable
+    return time; //TODO change to time variable
 
 }
 
