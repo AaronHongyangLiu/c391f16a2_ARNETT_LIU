@@ -18,6 +18,10 @@ CREATE TABLE poi_tag(
 	key text,
 	value text);
 
+CREATE TABLE std_index as 
+	select id, minX, maxX, minY, maxY
+	from poi;
+
 .mode tabs
 
 .import ./newData.tsv poi
