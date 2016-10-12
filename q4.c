@@ -31,11 +31,11 @@ int main(int argc, char **argv) {
     //error checking
     if (atoi(minX) >= atoi(maxX)) {
         fprintf(stderr, "x1 must be less than x2 [%s is not less than %s]\n", minX, maxX);
-        exit(1);
+        return 1;
     }
     if (atoi(minY) >= atoi(maxY)) {
         fprintf(stderr, "y1 must be greater than y2 [%s is not greater than %s]\n", maxY, minY);
-        exit(1);
+        return 1;
     }
 
     char *stmt_1 = (" SELECT DISTINCT t.id              \
