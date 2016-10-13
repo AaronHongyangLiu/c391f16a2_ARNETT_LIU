@@ -9,17 +9,23 @@
 int MAX_BOUNDING_SQUARES = 100; // from assignment request
 int QUERY_RUNS = 20;
 
-double std_time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree);
+double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree);
 
 int main(int argc, char **argv) {
     sqlite3 *db; //the database
     srand(time(NULL)); //for generating random numbers (from http://stackoverflow.com/questions/822323/how-to-generate-a-random-number-in-c)
 
-
     int rc;
 
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <database file> <side length>\n", argv[0]);
+        return (1);
+    }
+
+    // Set argument
+    int side_length = atoi(argv[2]);
+    if ((side_length <= 0) || (side_length>1000)) {
+        fprintf(stderr, "Side length must be between 0 and 1000. You entered %d.\n",side_length);
         return (1);
     }
 
@@ -30,10 +36,7 @@ int main(int argc, char **argv) {
         return (1);
     }
 
-    // Set argument
-    int side_length = atoi(argv[2]);
-
-    //float total_std = 0, total_rtree = 0;
+    float total_std = 0, total_rtree = 0;
     for (int i = 0; i < MAX_BOUNDING_SQUARES; i++) {
         // randomly generates the bottom left coordinate of the new box
         int x = rand() % (1000 - side_length + 1); // random integer between 0 - 1000 specifying X coord
@@ -46,37 +49,48 @@ int main(int argc, char **argv) {
 
         double total_time_std = 0, total_time_rtree = 0;
         for (int j = 0; j < QUERY_RUNS; j++) {
-            total_time_std += std_time_query(&db, minX, maxX, minY, maxY, 0);
-            total_time_rtree += std_time_query(&db, minX, maxX, minY, maxY, 1);
+            total_time_std += time_query(&db, minX, maxX, minY, maxY, 0);
+            total_time_rtree += time_query(&db, minX, maxX, minY, maxY, 1);
         }
-        //total_std += (total_time_std/20000);
-        //total_rtree += (total_time_rtree/20000);
+        total_std += (total_time_std/1000/QUERY_RUNS);
+        total_rtree += (total_time_rtree/1000/QUERY_RUNS);
 
-        printf("Parameter l: %d \n"
-               "Average runtime with r-tree: %lf ms\n"
-               "Average runtime without r-tree: %lf ms\n", side_length, total_time_rtree/1000/QUERY_RUNS, total_time_std/1000/QUERY_RUNS);
-        //printf("[minX = %d, maxX = %d, minY = %d, maxY = %d]\n", minX, maxX, minY, maxY);
+//        printf("Parameter l: %d \n"
+//               "Average runtime with r-tree: %lf ms\n"
+//               "Average runtime without r-tree: %lf ms\n", side_length, total_time_rtree/1000/QUERY_RUNS, total_time_std/1000/QUERY_RUNS);
     }
-    /*printf("Parameter l: %d \n"
+    printf("Parameter l: %d \n"
            "Average runtime with r-tree: %lf ms\n"
-           "Average runtime without r-tree: %lf ms\n", side_length, total_rtree/MAX_BOUNDING_SQUARES, total_std/MAX_BOUNDING_SQUARES);*/
+           "Average runtime without r-tree: %lf ms\n", side_length, total_rtree/MAX_BOUNDING_SQUARES, total_std/MAX_BOUNDING_SQUARES);
+
     sqlite3_close(db);
 }
 
 
-double std_time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree){
+double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree){
+    /**
+     * times an sql query on a specified table in a given database
+     *
+     * param db_ptr: a reference to the database to query
+     * param min_Xi: bottom left x coordinate
+     * param max_Xi: top right x coordinate
+     * param min_Yi: bottom left y coordinate
+     * param max_Yi: top right y coordinate
+     * param Rtree: a boolean specifying the table to run the query on
+     */
     double time = 0;
     int rc;
     sqlite3_stmt *stmt; //the update statement
     char *min_X, *max_X, *min_Y, *max_Y;
-    
+
     char *stmt_1;
-    if (Rtree){
-         stmt_1 = (" SELECT DISTINCT s.id    \
+
+    if (Rtree) {
+        stmt_1 = (" SELECT COUNT(DISTINCT s.id)    \
                      FROM poi_index s \
                      WHERE s.minX > ");
     } else {
-        stmt_1 = (" SELECT DISTINCT s.id    \
+        stmt_1 = (" SELECT COUNT(DISTINCT s.id)    \
                     FROM std_index s \
                     WHERE s.minX > ");
     }
@@ -84,6 +98,7 @@ double std_time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int 
     char *stmt_3 = (" AND s.minY > ");
     char *stmt_4 = (" AND s.maxY < ");
     char *stmt_5 = (";");
+
     asprintf(&min_X,"%d",min_Xi);
     asprintf(&max_X,"%d",max_Xi);
     asprintf(&min_Y,"%d",min_Yi);
@@ -103,33 +118,30 @@ double std_time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int 
     strcat(sql_stmt, stmt_4);
     strcat(sql_stmt, max_Y);
 
-    //printf("%s\n", sql_stmt);
+    clock_t before, after, diff;
 
-    clock_t before, after, diff; 
     before = clock();// start timer
     rc = sqlite3_prepare_v2(*db_ptr, sql_stmt, -1, &stmt, 0);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(*db_ptr));
         return 1;
     }
+
     while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        // no need to operate on result data
     }
+
     after = clock(); // stop timer
-    //time = difftime(after,before);
+
     diff = (after - before);
     time = diff *1000000 / CLOCKS_PER_SEC; // time in microsecends
 
-    //printf("time= %lf\n", time);
-
     sqlite3_finalize(stmt);
+    free(min_X);
+    free(max_X);
+    free(min_Y);
+    free(max_Y);
 
     return time;
 
 }
-
-//    char * sql_stmt;
-//
-//
-//
-//
-
