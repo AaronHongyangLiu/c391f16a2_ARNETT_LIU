@@ -1,3 +1,4 @@
+#define _GNU_SOURCE // for asprintf
 #include <stdio.h>
 #include <sqlite3.h>
 #include <string.h>
@@ -8,12 +9,11 @@
 int MAX_BOUNDING_SQUARES = 10; // from assignment request
 int QUERY_RUNS = 20;
 
-float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_Y);
+double std_time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree);
 
 int main(int argc, char **argv) {
     sqlite3 *db; //the database
-    srand(time(
-            NULL)); //for generating random numbers (from http://stackoverflow.com/questions/822323/how-to-generate-a-random-number-in-c)
+    srand(time(NULL)); //for generating random numbers (from http://stackoverflow.com/questions/822323/how-to-generate-a-random-number-in-c)
 
 
     int rc;
@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
     // Set argument
     int side_length = atoi(argv[2]);
 
+    float total_std = 0, total_rtree = 0;
     for (int i = 0; i < MAX_BOUNDING_SQUARES; i++) {
         // randomly generates the bottom left coordinate of the new box
         int x = rand() % (1000 - side_length + 1); // random integer between 0 - 1000 specifying X coord
@@ -43,31 +44,46 @@ int main(int argc, char **argv) {
         int minY = y;
         int maxY = y + side_length;
 
-        float total_time = 0;
+        double total_time_std = 0, total_time_rtree = 0;
         for (int j = 0; j < QUERY_RUNS; j++) {
-            total_time += std_time_query(&db, minX, maxX, minY, maxY);
+            total_time_std += std_time_query(&db, minX, maxX, minY, maxY, 0);
+            total_time_rtree += std_time_query(&db, minX, maxX, minY, maxY, 1);
         }
+        total_std += (total_time_std/20000);
+        total_rtree += (total_time_rtree/20000);
 
-        printf("[minX = %d, maxX = %d, minY = %d, maxY = %d]\n", minX, maxX, minY, maxY);
+        printf("%f, %f\n", total_time_std/20000, total_time_rtree/20000);
+        //printf("[minX = %d, maxX = %d, minY = %d, maxY = %d]\n", minX, maxX, minY, maxY);
     }
-
+    //printf("%f\n", total/MAX_BOUNDING_SQUARES);
     sqlite3_close(db);
 }
 
 
-float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_Y){
-    float time = 0;
+double std_time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree){
+    double time = 0;
     int rc;
     sqlite3_stmt *stmt; //the update statement
-
-    char *stmt_1 = (" SELECT DISTINCT s.id    \
-                            FROM std_index s, \
-                            WHERE s.minX > ");
+    char *min_X, *max_X, *min_Y, *max_Y;
+    
+    char *stmt_1;
+    if (Rtree){
+         stmt_1 = (" SELECT DISTINCT s.id    \
+                     FROM poi_index s \
+                     WHERE s.minX > ");
+    } else {
+        stmt_1 = (" SELECT DISTINCT s.id    \
+                    FROM std_index s \
+                    WHERE s.minX > ");
+    }
     char *stmt_2 = (" AND s.maxX < ");
     char *stmt_3 = (" AND s.minY > ");
     char *stmt_4 = (" AND s.maxY < ");
     char *stmt_5 = (";");
-
+    asprintf(&min_X,"%d",min_Xi);
+    asprintf(&max_X,"%d",max_Xi);
+    asprintf(&min_Y,"%d",min_Yi);
+    asprintf(&max_Y,"%d",max_Yi);
 
     // initialize the statement of appropriate length
     char sql_stmt[strlen(stmt_1) + strlen(stmt_2) + strlen(stmt_3) + \
@@ -83,21 +99,27 @@ float std_time_query(sqlite3 **db_ptr, int min_X, int max_X, int min_Y, int max_
     strcat(sql_stmt, stmt_4);
     strcat(sql_stmt, max_Y);
 
-    printf("%s\n", sql_stmt);
+    //printf("%s\n", sql_stmt);
 
-    clock_t before = clock(); // start timer
+    clock_t before, after, diff; 
+    before = clock();// start timer
     rc = sqlite3_prepare_v2(*db_ptr, sql_stmt, -1, &stmt, 0);
-    clock_t difference = clock() - before; // stop timer
-    time = difference * 1000 / CLOCKS_PER_SEC;
-
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(*db_ptr));
         return 1;
     }
+    while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+    }
+    after = clock(); // stop timer
+    //time = difftime(after,before);
+    diff = (after - before);
+    time = diff *1000000 / CLOCKS_PER_SEC; // time in microsecends
+
+    //printf("time= %lf\n", time);
 
     sqlite3_finalize(stmt);
 
-    return time; //TODO change to time variable
+    return time;
 
 }
 
