@@ -52,10 +52,12 @@ int main(int argc, char **argv) {
         total_std += (total_time_std/20000);
         total_rtree += (total_time_rtree/20000);
 
-        printf("%f, %f\n", total_time_std/20000, total_time_rtree/20000);
+        //printf("%f, %f\n", total_time_std/20000, total_time_rtree/20000);
         //printf("[minX = %d, maxX = %d, minY = %d, maxY = %d]\n", minX, maxX, minY, maxY);
     }
-    //printf("%f\n", total/MAX_BOUNDING_SQUARES);
+    printf("Parameter l: %d \n"
+           "Average runtime with r-tree: %lf ms\n"
+           "Average runtime without r-tree: %lf ms\n", side_length, total_rtree/MAX_BOUNDING_SQUARES, total_std/MAX_BOUNDING_SQUARES);
     sqlite3_close(db);
 }
 
