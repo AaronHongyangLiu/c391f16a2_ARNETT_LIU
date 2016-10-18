@@ -11,3 +11,7 @@ http://www.tablesgenerator.com/text_tables
 +----------------+--------------+--------------+--------------+--------------+--------------+
 
 Short answer here:
+Average runtime of both R-tree and Standard Index will increase as the side length increases.
+For R-tree, the runtime increases a relatively large amount as the side length increases.
+For Strandard Index, the runtime increases a relatively small amount as the side length increases.
+Average runtime of R-tree is always a lot better than the average runtime of Strandard Index.
