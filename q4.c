@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    char *stmt_1 = (" SELECT DISTINCT t.id              \
+    char *stmt_1 = (" SELECT DISTINCT t.id, i.minX, i.maxX, i.minY, i.MaxY, t.value \
                             FROM poi_tag t, poi_index i \
                             WHERE t.id = i.id AND       \
                                   t.key = 'class' AND   \
@@ -76,12 +76,18 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if ((rc = sqlite3_step(stmt)) != SQLITE_ROW) {
-        printf("No results were found using the given dimensions and class name '%s'\n", argv[6]);
-    }
+    int count = 0;
     // this prints each row of the result
     while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        printf("%s\n", sqlite3_column_text(stmt, 0));
+        count++; // counts number of results
+        printf("ID: %10s | minX: %17s | maxX: %17s | minY: %17s | maxY: %17s | value: %s\n",
+               sqlite3_column_text(stmt, 0),
+               sqlite3_column_text(stmt, 1), sqlite3_column_text(stmt, 2), sqlite3_column_text(stmt, 3),
+               sqlite3_column_text(stmt, 4), sqlite3_column_text(stmt, 5)
+        );
+    }
+    if (count == 0) {
+        printf("No results were found using the given dimensions and class name '%s'\n", argv[6]);
     }
 
     sqlite3_finalize(stmt);
