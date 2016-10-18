@@ -30,6 +30,9 @@ int main(int argc, char **argv) {
     // get the query
     char *sql_stmt = getQuery();
 
+    // create a function in sqlite3 that will return the nearest neighbor
+    sqlite3_create_function(db, "nnsearch", 3, SQLITE_UTF8, NULL, &sqlite_nnsearch, NULL, NULL);
+
     // execute the query
     rc = sqlite3_prepare_v2(db, sql_stmt, -1, &stmt, 0);
     if (rc != SQLITE_OK) {
@@ -55,7 +58,8 @@ int main(int argc, char **argv) {
 char *getQuery() {
     char *q;
 
-    q = "select * from poi_index_node";// 		      --|
+
+    q =  "select nnsearch(rtreenode(2,data),%d, %d) from poi_index_node where nodeno=1";// 		      --|
     return q;
 }
 
@@ -191,4 +195,18 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
         }
     }
 
+}
+
+void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv){
+    // this will initialize the root node, and the linked list associate with it
+    if (argc == 3){
+        char * nodeString;
+        double x,y;
+
+        nodeString = sqlite3_value_text(argv[0]);
+        x = sqlite3_value_double(argv[1]);
+        y = sqlite3_value_double(argv[2]);
+
+
+    }
 }
