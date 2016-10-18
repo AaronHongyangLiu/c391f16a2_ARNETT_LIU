@@ -63,7 +63,7 @@ struct MBR {
     int nodeno;
     double minX, maxX, minY, maxY, dist, minDist; // dist is minDist for an object and minMaxDist for an MBR
     struct MBR *next; // this is for the list of Node
-    struct MBR *activeNext; // this is for the active branch list
+    struct MBR *activeNext; // this is for the active branch list which is the sorted list
 };
 
 struct Point {
@@ -142,10 +142,19 @@ double minMaxDist(struct MBR r, struct Point p) {
 }
 
 void genBranchList(struct Point p, struct Node n, struct MBR *branchList) {
-    // TODO
+    /**
+     * function will iterate through a Nodes MBRs and assign each MBR its mindist and minmaxdist
+     */
+    *branchList = *node.MBRListHead; //the branch list will point to the linked list of MBRs in the given node
+    struct MBR *currentMBR = node.MBRListHead;
+    while (*currentMBR != NULL) {
+        minMaxDist(*currentMBR, p);
+        *currentMBR = currentMBR->next;
+    }
 }
 
-void sortBranchList(struct MBR *branchListHead) {
+void sortBranchList(struct MBR *branchList) {
+
     //TODO
 }
 
