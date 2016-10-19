@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     char *sql_stmt = getQuery();
 
     // create a function in sqlite3 that will return the nearest neighbor
-    sqlite3_create_function(db, "nnsearch", 3, SQLITE_UTF8, NULL, &sqlite_nnsearch, NULL, NULL);
+    sqlite3_create_function(db, "nnsearch", 4, SQLITE_UTF8, NULL, &sqlite_nnsearch, NULL, NULL);
 
     // execute the query
     rc = sqlite3_prepare_v2(db, sql_stmt, -1, &stmt, 0);
@@ -59,7 +59,7 @@ char *getQuery() {
     char *q;
 
 
-    q =  "select nnsearch(rtreenode(2,data),%d, %d) from poi_index_node where nodeno=1";// 		      --|
+    q = "select nnsearch(rtreenode(2,data), rtreedepth(data) , %d, %d) from poi_index_node where nodeno=1";// 		      --|
     return q;
 }
 
@@ -131,15 +131,15 @@ double minMaxDist(struct MBR r, struct Point p) {
     // determin rMy
     if (p.y >= ((r.minY + r.maxY) / 2)) {
         rMy = r.minY;
-    } else{
+    } else {
         rMy = r.maxY;
     }
 
     // minMax = min( dist(p, (rmx, rMy)) and dist(p, (rMx, rmy)) )
-    dist1 = (p.x-rmx)*(p.x-rmx) + (p.y-rMy)*(p.y-rMy);
-    dist2 = (p.x-rMx)*(p.x-rMx) + (p.y-rmy)*(p.y-rmy);
+    dist1 = (p.x - rmx) * (p.x - rmx) + (p.y - rMy) * (p.y - rMy);
+    dist2 = (p.x - rMx) * (p.x - rMx) + (p.y - rmy) * (p.y - rmy);
 
-    if (dist1 < dist2){
+    if (dist1 < dist2) {
         return dist1;
     }
     return dist2;
@@ -152,7 +152,7 @@ void genBranchList(struct Point p, struct Node n, struct MBR *branchList) {
     *branchList = *node.MBRListHead; //the branch list will point to the linked list of MBRs in the given node
     struct MBR *currentMBR = node.MBRListHead;
     while (*currentMBR != NULL) {
-        minMaxDist(*currentMBR, p);
+        currentMBR->dist = minMaxDist(*currentMBR, p);
         *currentMBR = currentMBR->next;
     }
 }
@@ -174,6 +174,7 @@ struct Node getChildNode(struct MBR) {
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel) {
     /*
+     * recursive function using the same algorithm given in the paper
      *
      * */
 
@@ -206,16 +207,40 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
 
 }
 
-void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv){
-    // this will initialize the root node, and the linked list associate with it
-    if (argc == 3){
-        char * nodeString;
-        double x,y;
+void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
+    /*
+     * this will initialize the root node, and the linked list associate with it
+     * then call the NNSearch function
+     *
+     * */
+    if (argc == 4) {
+        char *nodeString;
+        double x, y;
+        struct Node rootNode;
+        struct Point targetPoint;
+        struct MBR initialNearest;
+        int depth;
 
         nodeString = sqlite3_value_text(argv[0]);
-        x = sqlite3_value_double(argv[1]);
-        y = sqlite3_value_double(argv[2]);
+        depth = sqlite_value_int(argv[1]);
+        x = sqlite3_value_double(argv[2]);
+        y = sqlite3_value_double(argv[3]);
 
+        targetPoint.x = x;
+        targetPoint.y = y;
 
+        initialNearest.dist = 10000; // set this dist to be larger than the longest distance in a 1000*1000 grid.
+
+        buildNode(&nodeString, &rootNode);
+        NNSearch(rootNode, targetPoint,initialNearest,depth, 0);
     }
+}
+
+void buildNode(char **ptrToString, struct Node *targetNode){
+    /*
+     *
+     *  this function build a node from string with format like:
+     *  '{nodeno1 minX1 maxX1 minY1 maxY1} {nodeno2 minX2 maxX2 minY2 maxY2}'...
+     *
+     * */
 }
