@@ -173,6 +173,8 @@ int pruneBranchList(struct Point p, struct Node n, struct MBR *branchList, struc
 struct Node getChildNode(struct MBR) {
     //TODO
     // return a node, by using sqlite....
+    // node.nodeno = MBR.nodeno
+    // select rtreenode(2,data) from poi_index_node where nodeno=MBR.nodeno
 }
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel) {
