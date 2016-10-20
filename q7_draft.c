@@ -155,6 +155,7 @@ void genBranchList(struct Point p, struct Node n, struct MBR *branchList) {
     struct MBR *currentMBR = node.MBRListHead;
     while (*currentMBR != NULL) {
         currentMBR->dist = minMaxDist(*currentMBR, p);
+        currentMBR->minDist = minDist(*currentMBR, p);
         *currentMBR = currentMBR->next;
     }
 }
@@ -210,6 +211,7 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
             NNSearch(newNode, p, &nearest, depth, clevel + 1);
             count = pruneBranchList(p, currentNode, &branchListHead, nearest);
             // need to increament current here
+            current = *(current.next)
         }
     }
 
