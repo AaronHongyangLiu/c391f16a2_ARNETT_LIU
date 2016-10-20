@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <sqlite3.h>
+#include <string.h>
+#include <stdlib.h>
 
 // the function that return the query as string
 char *getQuery();
@@ -173,7 +175,7 @@ struct Node getChildNode(struct MBR) {
 }
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel) {
-    /*
+    /**
      * recursive function using the same algorithm given in the paper
      *
      * */
@@ -184,11 +186,16 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
     int count;
 
     if (clevel == depth) {
-        currentMBR = *currentNode.MBRListHead;
+        currentMBR = *(currentNode.MBRListHead);
         for (int i = 0; i < currentNode.count; i++) {
             currentMBR.dist = minDist(currentMBR, p);
-            if (currentMBR.dist < (*nearest).dist) {
-                *nearest = currentMBR;
+            if (currentMBR.dist < nearest->dist) {
+                nearest->nodeno = currentMBR.nodeno;
+                nearest->dist = currentMBR.dist;
+                nearest->minX = currentMBR.minX;
+                nearest->maxX = currentMBR.maxX;
+                nearest->minY = currentMBR.minY;
+                nearest->maxY = currentMBR.maxY;
             }
             currentMBR = *(currentMBR.next);
         }
@@ -208,9 +215,9 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
 }
 
 void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
-    /*
+    /**
      * this will initialize the root node, and the linked list associate with it
-     * then call the NNSearch function
+     * then call the NNSearch function, and return the id of nearest neighbor
      *
      * */
     if (argc == 4) {
@@ -218,7 +225,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         double x, y;
         struct Node rootNode;
         struct Point targetPoint;
-        struct MBR initialNearest;
+        struct MBR nearestNeighbor;
         int depth;
 
         nodeString = sqlite3_value_text(argv[0]);
@@ -229,18 +236,87 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         targetPoint.x = x;
         targetPoint.y = y;
 
-        initialNearest.dist = 10000; // set this dist to be larger than the longest distance in a 1000*1000 grid.
+        // initialize the nn
+        nearestNeighbor.dist = 10000; // set this dist to be larger than the longest distance in a 1000*1000 grid.
 
-        buildNode(&nodeString, &rootNode);
-        NNSearch(rootNode, targetPoint,initialNearest,depth, 0);
+        rootNode.nodeNo = 1; // root node has nodeno = 1;
+        buildNode(&nodeString, &rootNode); // build the count and mbr linked list
+        NNSearch(rootNode, targetPoint, &nearestNeighbor, depth, 0);
+
+        // return the id of the nearest neighbor id
+        sqlite3_result_int(context, nearestNeighbor.nodeno);
     }
 }
 
-void buildNode(char **ptrToString, struct Node *targetNode){
-    /*
+void buildNode(char **ptrToString, struct Node *targetNodePtr){
+    /**
      *
      *  this function build a node from string with format like:
      *  '{nodeno1 minX1 maxX1 minY1 maxY1} {nodeno2 minX2 maxX2 minY2 maxY2}'...
      *
      * */
+    struct MBR *mbrPtr; // pointer to current mbr
+    char *intString; // a string that will contain an int
+    int index; // the index of the number
+               // 0 means nodeno, 1 means minX, 2 means maxX, 3 means minY, 4 means maxY
+    int inBracket=0; // a flag about whether we are with in the curly bracket
+
+    targetNodePtr->count = 0;
+
+    for (int i=0; i<strlen(*ptrToString); i++){
+        switch((*ptrToString)[i]){
+            case '{':
+                inBracket = 1;
+                index = 0;
+                targetNodePtr->count +=1;
+                intString = malloc(sizeof(char)); // add a null terminator
+                if (i==0){
+                    // head mbr in the list
+                    mbrPtr = malloc(sizeof(struct MBR));
+                    targetNodePtr->MBRListHead = mbrPtr;
+
+                } else {
+                    mbrPtr->next = malloc(sizeof(struct MBR));
+                    mbrPtr->activeNext = mbrPtr->next;
+                    mbrPtr = mbrPtr->next;
+                }
+                break;
+
+            case ' ':
+                if (inBracket){
+                    switch (index){
+                        case 0:
+                            mbrPtr->nodeno = atoi(intString);
+                            break;
+                        case 1:
+                            mbrPtr->minX = atoi(intString);
+                            break;
+                        case 2:
+                            mbrPtr->maxX = atoi(intString);
+                            break;
+                        case 3:
+                            mbrPtr->minY = atoi(intString);
+                            break;
+                        case 4:
+                            mbrPtr->maxY = atoi(intString);
+                            break;
+                    }
+                    index += 1;
+                    free(intString);
+                    intString = malloc(sizeof(char)); //get ready for next number
+                }
+                break;
+
+            case '}':
+                inBracket = 0;
+                free(intString);
+                break;
+
+            default:
+                intString = realloc(intString, (sizeof(intString)+sizeof(char)));
+                intString[strlen(intString)] = (*ptrToString)[i];
+
+        }
+    }
+
 }

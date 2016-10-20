@@ -118,19 +118,17 @@ double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_
     strcat(sql_stmt, stmt_4);
     strcat(sql_stmt, max_Y);
 
-    clock_t before, after, diff;
-
-    before = clock();// start timer
+    // test if the query can be prepared
     rc = sqlite3_prepare_v2(*db_ptr, sql_stmt, -1, &stmt, 0);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(*db_ptr));
         return 1;
     }
 
-    while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        // no need to operate on result data
-    }
+    clock_t before, after, diff;
 
+    before = clock();// start timer
+    sqlite3_exec(*db_ptr,sql_stmt,NULL,NULL,NULL);
     after = clock(); // stop timer
 
     diff = (after - before);
