@@ -209,6 +209,7 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
             newNode = getChildNode(current);
             NNSearch(newNode, p, &nearest, depth, clevel + 1);
             count = pruneBranchList(p, currentNode, &branchListHead, nearest);
+            // need to increament current here
         }
     }
 
