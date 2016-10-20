@@ -10,8 +10,9 @@
 // the function that return the query as string
 char *getQuery();
 
+sqlite3 *db; //the global database
+
 int main(int argc, char **argv) {
-    sqlite3 *db; //the database
     sqlite3_stmt *stmt; //the update statement
     int rc;
 
@@ -170,11 +171,42 @@ int pruneBranchList(struct Point p, struct Node n, struct MBR *branchList, struc
     // return the number of element in the list
 }
 
-struct Node getChildNode(struct MBR) {
-    //TODO
-    // return a node, by using sqlite....
-    // node.nodeno = MBR.nodeno
-    // select rtreenode(2,data) from poi_index_node where nodeno=MBR.nodeno
+struct Node getChildNode(struct MBR r) {
+    /***
+     *
+     * This function get all the child MBRs inside parent MBR r, return the result as a struct Node.
+     *
+     **/
+    struct Node result;
+    char *query, *queryResult;
+    sqlite3_stmt *stmt;
+
+    result.nodeNo = r.nodeno;
+    query = sqlite3_mprintf("select rtreenode(2,data) from poi_index_node where nodeno = %d", result.nodeNo);
+
+
+    // execute the query
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+
+    // get the query result
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        int col = 0;
+        queryResult = sqlite3_column_text(stmt, col);
+    }
+
+    // build up the node
+    buildNode(&queryResult, &result);
+
+    //finalize a statement, free the result of sqlite3_mprintf
+    sqlite3_finalize(stmt);
+    sqlite3_free(query);
+
+    return result;
 }
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel) {
@@ -213,7 +245,7 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
             NNSearch(newNode, p, &nearest, depth, clevel + 1);
             count = pruneBranchList(p, currentNode, &branchListHead, nearest);
             // need to increament current here
-            current = *(current.next)
+            current = *(current.next);
         }
     }
 
@@ -291,19 +323,16 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr){
                 if (inBracket){
                     switch (index){
                         case 0:
-                            mbrPtr->nodeno = atoi(intString);
+                            mbrPtr->nodeno = atof(intString);
                             break;
                         case 1:
-                            mbrPtr->minX = atoi(intString);
+                            mbrPtr->minX = atof(intString);
                             break;
                         case 2:
-                            mbrPtr->maxX = atoi(intString);
+                            mbrPtr->maxX = atof(intString);
                             break;
                         case 3:
-                            mbrPtr->minY = atoi(intString);
-                            break;
-                        case 4:
-                            mbrPtr->maxY = atoi(intString);
+                            mbrPtr->minY = atof(intString);
                             break;
                     }
                     index += 1;
@@ -313,6 +342,10 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr){
                 break;
 
             case '}':
+                if(index == 4){
+                    mbrPtr->maxY = atof(intString);
+                }
+
                 inBracket = 0;
                 free(intString);
                 break;
