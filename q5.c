@@ -9,7 +9,7 @@
 int MAX_BOUNDING_SQUARES = 100; // from assignment request
 int QUERY_RUNS = 20;
 
-double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree);
+double time_query(sqlite3 **db_ptr, double min_Xi, double max_Xi, double min_Yi, double max_Yi, int Rtree);
 
 int main(int argc, char **argv) {
     sqlite3 *db; //the database
@@ -23,9 +23,10 @@ int main(int argc, char **argv) {
     }
 
     // Set argument
-    int side_length = atoi(argv[2]);
-    if ((side_length <= 0) || (side_length>1000)) {
-        fprintf(stderr, "Side length must be between 0 and 1000. You entered %d.\n",side_length);
+    double side_length = atof(argv[2]);
+    int side_length_int = atoi(argv[2]);
+    if ((side_length <= 0.00) || (side_length > 1000.00)) {
+        fprintf(stderr, "Side length must be between 0 and 1000. You entered %4f.\n", side_length);
         return (1);
     }
 
@@ -39,13 +40,13 @@ int main(int argc, char **argv) {
     float total_std = 0, total_rtree = 0;
     for (int i = 0; i < MAX_BOUNDING_SQUARES; i++) {
         // randomly generates the bottom left coordinate of the new box
-        int x = rand() % (1000 - side_length + 1); // random integer between 0 - 1000 specifying X coord
-        int y = rand() % (1000 - side_length + 1); // random integer between 0 - 1000 specifying Y coord
+        double x = rand() % (1000 - side_length_int + 1); // random integer between 0 - 1000 specifying X coord
+        double y = rand() % (1000 - side_length_int + 1); // random integer between 0 - 1000 specifying Y coord
 
-        int minX = x;
-        int maxX = x + side_length;
-        int minY = y;
-        int maxY = y + side_length;
+        double minX = x;
+        double maxX = x + side_length;
+        double minY = y;
+        double maxY = y + side_length;
 
         double total_time_std = 0, total_time_rtree = 0;
         for (int j = 0; j < QUERY_RUNS; j++) {
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
 //               "Average runtime with r-tree: %lf ms\n"
 //               "Average runtime without r-tree: %lf ms\n", side_length, total_time_rtree/1000/QUERY_RUNS, total_time_std/1000/QUERY_RUNS);
     }
-    printf("Parameter l: %d \n"
+    printf("Parameter l: %.4f \n"
            "Average runtime with r-tree: %lf ms\n"
            "Average runtime without r-tree: %lf ms\n", side_length, total_rtree/MAX_BOUNDING_SQUARES, total_std/MAX_BOUNDING_SQUARES);
 
@@ -67,7 +68,7 @@ int main(int argc, char **argv) {
 }
 
 
-double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_Yi, int Rtree){
+double time_query(sqlite3 **db_ptr, double min_Xi, double max_Xi, double min_Yi, double max_Yi, int Rtree) {
     /**
      * times an sql query on a specified table in a given database
      *
@@ -99,10 +100,10 @@ double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_
     char *stmt_4 = (" AND s.maxY < ");
     char *stmt_5 = (";");
 
-    asprintf(&min_X,"%d",min_Xi);
-    asprintf(&max_X,"%d",max_Xi);
-    asprintf(&min_Y,"%d",min_Yi);
-    asprintf(&max_Y,"%d",max_Yi);
+    asprintf(&min_X, "%.4f", min_Xi);
+    asprintf(&max_X, "%.4f", max_Xi);
+    asprintf(&min_Y, "%.4f", min_Yi);
+    asprintf(&max_Y, "%.4f", max_Yi);
 
     // initialize the statement of appropriate length
     char sql_stmt[strlen(stmt_1) + strlen(stmt_2) + strlen(stmt_3) + \
@@ -132,7 +133,7 @@ double time_query(sqlite3 **db_ptr, int min_Xi, int max_Xi, int min_Yi, int max_
     after = clock(); // stop timer
 
     diff = (after - before);
-    time = diff *1000000 / CLOCKS_PER_SEC; // time in microsecends
+    time = diff * 1000000 / CLOCKS_PER_SEC; // time in microseconds
 
     sqlite3_finalize(stmt);
     free(min_X);
