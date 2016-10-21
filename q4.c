@@ -29,11 +29,11 @@ int main(int argc, char **argv) {
     char *maxY = argv[3];
 
     //error checking
-    if (atoi(minX) >= atoi(maxX)) {
+    if (atof(minX) >= atof(maxX)) {
         fprintf(stderr, "x1 must be less than x2 [%s is not less than %s]\n", minX, maxX);
         return 1;
     }
-    if (atoi(minY) >= atoi(maxY)) {
+    if (atof(minY) >= atof(maxY)) {
         fprintf(stderr, "y1 must be greater than y2 [%s is not greater than %s]\n", maxY, minY);
         return 1;
     }
