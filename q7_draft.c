@@ -30,11 +30,12 @@ int main(int argc, char **argv) {
         return (1);
     }
 
-    // get the query
-    char *sql_stmt = getQuery();
-
     // create a function in sqlite3 that will return the nearest neighbor
     sqlite3_create_function(db, "nnsearch", 4, SQLITE_UTF8, NULL, &sqlite_nnsearch, NULL, NULL);
+
+
+    // get the query
+    char *sql_stmt = getQuery();
 
     // execute the query
     rc = sqlite3_prepare_v2(db, sql_stmt, -1, &stmt, 0);
@@ -62,7 +63,7 @@ char *getQuery() {
     char *q;
 
 
-    q = "select nnsearch(rtreenode(2,data), rtreedepth(data) , %d, %d) from poi_index_node where nodeno=1";// 		      --|
+    q = "select nnsearch(rtreenode(2,data), rtreedepth(data), %d, %d) from poi_index_node where nodeno=1";// 		      --|
     return q;
 }
 
@@ -148,7 +149,7 @@ double minMaxDist(struct MBR r, struct Point p) {
     return dist2;
 }
 
-void genBranchList(struct Point p, struct Node n, struct MBR *branchList) {
+void genBranchList(struct Point p, struct Node node, struct MBR *branchList) {
     /**
      * function will iterate through a Nodes MBRs and assign each MBR its mindist and minmaxdist
      */
