@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     double side_length = atof(argv[2]);
     int side_length_int = atoi(argv[2]);
     if ((side_length <= 0.00) || (side_length > 1000.00)) {
-        fprintf(stderr, "Side length must be between 0 and 1000. You entered %4f.\n", side_length);
+        fprintf(stderr, "Side length must be between 0 and 1000. You entered %.4f.\n", side_length);
         return (1);
     }
 
