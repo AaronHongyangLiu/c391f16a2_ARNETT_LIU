@@ -25,3 +25,15 @@ Q5
         ```
         ./a.out <database file> <side length>
         ```
+
+Q7
+    to compile q7.c use the following command line instruction:
+        ```
+        gcc -g -std=c99 q7.c sqlite3.c -lpthread -ldl -DSQLITE_ENABLE_RTREE=1
+        ```
+
+    to execute use:
+        ```
+        ./a.out <database file> x y
+        ```
+	where x,y are the coordinates of the point

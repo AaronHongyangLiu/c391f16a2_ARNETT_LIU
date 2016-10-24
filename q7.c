@@ -26,7 +26,7 @@ struct Node {
     struct MBR *MBRListHead; // a linked list of MBRs in this node
 };
 
-char *getQuery();// the function that return the query as string
+char *getQuery();
 
 double minDist(struct MBR r, struct Point p);
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     }
 
 
-    // create a function in sqlite3 that will return the nearest neighbor
+    // create a function in sqlite3 that will return the nearest id of the neighbor
     sqlite3_create_function(db, "nnsearch", 4, SQLITE_UTF8, NULL, &sqlite_nnsearch, NULL, NULL);
 
 
@@ -99,14 +99,21 @@ int main(int argc, char **argv) {
 }
 
 char *getQuery(char *xString, char *yString) {
+    /**
+     * function will reutn the query string
+     * */
     char *q;
     int x, y;
     x = atoi(xString);
     y = atoi(yString);
 
     q = sqlite3_mprintf(
-            "select nnsearch(rtreenode(2,data), rtreedepth(data), %d, %d) from poi_index_node where nodeno=1", x,
-            y);// 		      --|
+            "with nearest as                                                         \
+             (select nnsearch(rtreenode(2,data), rtreedepth(data), %d, %d) as id     \
+              from poi_index_node                                                    \
+              where nodeno=1)                                                        \
+             select i.* from poi_index i, nearest                                    \
+             where i.id = nearest.id ", x, y);// 		      --|
     return q;
 }
 
@@ -177,7 +184,8 @@ double minMaxDist(struct MBR r, struct Point p) {
 
 void genBranchList(struct Point p, struct Node node, struct MBR *branchList) {
     /**
-     * function will iterate through a Nodes MBRs and assign each MBR its mindist and minmaxdist
+     * function will iterate through all the MBRs in the node and assign each MBR its mindist and minmaxdist
+     * then assign branchList to the head of this list
      */
     struct MBR *currentMBR = node.MBRListHead;
     for (int i = 0; i < node.count; i++) {
@@ -219,12 +227,11 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 
 
     for (i = 0; i < size - 1; i++, k--) {
-        current = branchList;
+        current = branchList;      // go to the head of the list
         next = current->activeNext;
 
-
         for (j = 1; j < k; j++) {
-
+            // swap the mbr
             if (current->dist > next->dist) {
                 copy(current, &temp);
                 copy(next, current);
@@ -250,7 +257,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
     struct MBR *current = branchList->activeNext;
     double minimum_minMaxDist = branchList->dist;
 
-    /* this may not be needed
+    /* this may not be needed todo: ask TA for this
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)  <- ?????
     if (nearest->dist > minimum_minMaxDist){
         *nearest = *branchList;
@@ -286,7 +293,9 @@ struct Node getChildNode(struct MBR r) {
     int rc;
 
     result.nodeNo = r.nodeno;
-    query = sqlite3_mprintf("select rtreenode(2,data) from poi_index_node where nodeno = %d", result.nodeNo);
+    query = sqlite3_mprintf("select rtreenode(2,data) \
+                             from poi_index_node      \
+                             where nodeno = %d; ", result.nodeNo);
 
 
     // execute the query
@@ -334,6 +343,7 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
             currentMBR.dist = minDist(currentMBR, p);
             currentMBR.minDist = minDist(currentMBR, p);
             if (currentMBR.dist < nearest->dist) {
+                // update nearest
                 nearest->nodeno = currentMBR.nodeno;
                 nearest->dist = currentMBR.dist;
                 nearest->minDist = nearest->dist;
@@ -342,7 +352,7 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
                 nearest->minY = currentMBR.minY;
                 nearest->maxY = currentMBR.maxY;
             }
-            if (i != currentNode.count - 1) {
+            if (i != currentNode.count - 1) {  // update currentMBR if it's not the last mbr in the list
                 currentMBR = *(currentMBR.next);
             }
         }
@@ -353,13 +363,13 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
         count = pruneBranchList(p, currentNode.count, &branchListHead, nearest);
 
         struct MBR current = branchListHead;
+        // go through each MBR in the branchList
         for (int j = 0; j < count; j++) {
-            newNode = getChildNode(current);
-            NNSearch(newNode, p, nearest, depth, clevel + 1);
+            newNode = getChildNode(current);   // get child node of the mbr
+            NNSearch(newNode, p, nearest, depth, clevel + 1); // recursively calling NNSearch on child node
             count = pruneBranchList(p, count, &branchListHead, nearest);
 
-            // need to increment current here along the active branch list
-            if (j != count - 1) {
+            if (j != count - 1) {    // update current if it's not the last mbr in the active branch list
                 current = *(current.activeNext);
             }
         }
@@ -381,7 +391,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         struct Point targetPoint;
         struct MBR nearestNeighbor;
         int depth;
-
+        // get all the parameters
         nodeString = (char *) sqlite3_value_text(argv[0]);
         depth = sqlite3_value_int(argv[1]);
         x = sqlite3_value_double(argv[2]);
@@ -412,30 +422,30 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
      *
      * */
     struct MBR *mbrPtr; // pointer to current mbr
-    char *intString; // a string that will contain an int
-    int index; // the index of the number
+    char *intString;    // a string that will contain an integer number
+    int index;  // the index of the number
     // 0 means nodeno, 1 means minX, 2 means maxX, 3 means minY, 4 means maxY
     int inBracket = 0; // a flag about whether we are with in the curly bracket
-    int stringLength; // the value of strlen(intString)
+    int stringLength;  // the value of strlen(intString)
 
     targetNodePtr->count = 0;
+    // the for loop will go through each byte in the *ptrToString
     for (int i = 0; i < strlen(*ptrToString); i++) {
         switch ((*ptrToString)[i]) {
             case '{':
-                inBracket = 1;
-                index = 0;
-                targetNodePtr->count += 1;
-                stringLength = 0;
-                intString = (char *) malloc(sizeof(char));   // the empty bite at the end of the string
-                intString = '\0';                   // add the null byte at the end
+                inBracket = 1; // change the flag of whether we are inside a bracket to True
+                index = 0;     // initialize the index for the this number
+                targetNodePtr->count += 1; // increment the number of mbrs in the node
+                stringLength = 0;          // initialize the strlen fo the variable intString
+                intString = (char *) malloc(sizeof(char));
+                intString = '\0';          // add the null byte at the end
                 if (i == 0) {
-                    // head mbr in the list
-                    mbrPtr = malloc(sizeof(struct MBR));
-                    targetNodePtr->MBRListHead = mbrPtr;
-
+                    // if this mbr is the head mbr in the list
+                    mbrPtr = malloc(sizeof(struct MBR));       // create a mbr
+                    targetNodePtr->MBRListHead = mbrPtr;       // add it to the head of the list
                 } else {
-                    mbrPtr->next = malloc(sizeof(struct MBR));
-                    mbrPtr->activeNext = mbrPtr->next;
+                    mbrPtr->next = malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
+                    mbrPtr->activeNext = mbrPtr->next;         // add it to the active list as well
                     mbrPtr = mbrPtr->next;
                 }
                 break;
@@ -443,40 +453,40 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
             case ' ':
                 if (inBracket) {
                     switch (index) {
-                        case 0:
+                        case 0: // if index == 0, assign it to nodeno
                             mbrPtr->nodeno = atol(intString);
                             break;
-                        case 1:
+                        case 1: // if index == 1, assign it to minX
                             mbrPtr->minX = atof(intString);
                             break;
-                        case 2:
+                        case 2: // if index == 2, assign it to maxX
                             mbrPtr->maxX = atof(intString);
                             break;
-                        case 3:
+                        case 3: // if index == 3, assign it to minY
                             mbrPtr->minY = atof(intString);
                             break;
                     }
-                    index += 1;
-                    free(intString);
+                    index += 1; // increment the index to the next number
+                    free(intString); // free the pointer
                     intString = (char *) malloc(sizeof(char)); //get ready for next number
-                    stringLength = 0;
+                    stringLength = 0; // initialize the strlen of intString
                 }
                 break;
 
             case '}':
-                if (index == 4) {
+                if (index == 4) { // if index == 4, assign it to maxY
                     mbrPtr->maxY = atof(intString);
                 }
 
-                inBracket = 0;
-                free(intString);
+                inBracket = 0; // update the flag
+                free(intString); // free the pointer
                 break;
 
-            default:
-                intString = (char *) realloc(intString, (stringLength + 2));
-                intString[stringLength] = (*ptrToString)[i];
-                intString[stringLength + 1] = '\0';
-                stringLength += 1;
+            default: // if this byte is part of a number
+                intString = (char *) realloc(intString, (stringLength + 2)); // add 2 bytes for new char and \0
+                intString[stringLength] = (*ptrToString)[i]; // add the char to the end of the string
+                intString[stringLength + 1] = '\0';          // add the null terminate byte
+                stringLength += 1;                           // update the strlen of intString
 
         }
     }
