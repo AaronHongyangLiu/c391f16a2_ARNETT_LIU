@@ -36,4 +36,4 @@ Q7
         ```
         ./a.out <database file> x y
         ```
-	where x,y are the coordinates of the point
+	where x,y are the coordinates of the point, we choose to use the minDist as the distance between a Point and an Object
