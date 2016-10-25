@@ -85,13 +85,12 @@ int main(int argc, char **argv) {
 
 
     // display the query
-    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        int col;
-        for (col = 0; col < sqlite3_column_count(stmt) - 1; col++) {
-            printf("%s|", sqlite3_column_text(stmt, col));
-        }
-        printf("%s", sqlite3_column_text(stmt, col));
-        printf("\n");
+    if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        printf("ID: %10s | minX: %17s | maxX: %17s | minY: %17s | maxY: %17s \n",
+               sqlite3_column_text(stmt, 0),
+               sqlite3_column_text(stmt, 1), sqlite3_column_text(stmt, 2), sqlite3_column_text(stmt, 3),
+               sqlite3_column_text(stmt, 4)
+        );
     }
 
     //finalize a statement
@@ -249,7 +248,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
     /**
      *
      * this function will prune the list and return the number of MBRs left in the pruned list
-     * NOTE: as the branchList will never contain an Object, we do not need to compare dist(Object) with minMaxDist(MBR) [strategy 2]
+     * 
      * */
 
     int length = listLength;
@@ -257,11 +256,11 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
     struct MBR *current = branchList->activeNext;
     double minimum_minMaxDist = branchList->dist;
 
-    /* this may not be needed todo: ask TA for this
-    // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)  <- ?????
+    // update dist for the nearest neighbor with [strategy 2], for pruning in the child node
+    // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)  
     if (nearest->dist > minimum_minMaxDist){
-        *nearest = *branchList;
-    }*/
+        nearest->dist = minimum_minMaxDist;
+    }
 
 
     for (int i = 0; i < (listLength) - 1; i++) {
