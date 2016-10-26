@@ -26,6 +26,7 @@ Q5
         ./a.out <database file> <side length>
         ```
 
+
 Q7
     to compile q7.c use the following command line instruction:
         ```
@@ -37,3 +38,16 @@ Q7
         ./a.out <database file> x y
         ```
 	where x,y are the coordinates of the point, we choose to use the minDist as the distance between a Point and an Object
+
+
+Q8
+    to compile q8.c use the following command line instruction:
+        ```
+        gcc -g -std=c99 q8.c sqlite3.c -lpthread -ldl -DSQLITE_ENABLE_RTREE=1
+        ```
+
+    to execute use:
+        ```
+        ./a.out <database file> x y k
+        ```
+	where x,y are the coordinates of the point, and k is the parameter to require the program return k nearest neightbors. we choose to use the minDist as the distance between a Point and an Object
