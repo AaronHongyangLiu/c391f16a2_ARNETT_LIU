@@ -199,10 +199,10 @@ void copy(struct MBR *src, struct MBR *dst) {
      * this function will copy data from MBR src to MBR dst.
      * */
     dst->nodeno = src->nodeno;
-    dst->minX = src->nodeno;
-    dst->minY = src->nodeno;
-    dst->maxY = src->nodeno;
-    dst->maxX = src->nodeno;
+    dst->minX = src->minX;
+    dst->minY = src->minY;
+    dst->maxY = src->maxY;
+    dst->maxX = src->maxX;
     dst->dist = src->dist;
     dst->minDist = src->minDist;
 }
@@ -439,10 +439,10 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
                 intString = '\0';          // add the null byte at the end
                 if (i == 0) {
                     // if this mbr is the head mbr in the list
-                    mbrPtr = malloc(sizeof(struct MBR));       // create a mbr
+                    mbrPtr = (struct MBR*)malloc(sizeof(struct MBR));       // create a mbr
                     targetNodePtr->MBRListHead = mbrPtr;       // add it to the head of the list
                 } else {
-                    mbrPtr->next = malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
+                    mbrPtr->next = (struct MBR*)malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
                     mbrPtr->activeNext = mbrPtr->next;         // add it to the active list as well
                     mbrPtr = mbrPtr->next;
                 }

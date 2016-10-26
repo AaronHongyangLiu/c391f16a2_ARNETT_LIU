@@ -40,6 +40,8 @@ struct Node getChildNode(struct MBR r);
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel, int k);
 
+void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize);
+
 void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv);
 
 void buildNode(char **ptrToString, struct Node *targetNodePtr);
@@ -195,10 +197,10 @@ void copy(struct MBR *src, struct MBR *dst) {
      * this function will copy data from MBR src to MBR dst.
      * */
     dst->nodeno = src->nodeno;
-    dst->minX = src->nodeno;
-    dst->minY = src->nodeno;
-    dst->maxY = src->nodeno;
-    dst->maxX = src->nodeno;
+    dst->minX = src->minX;
+    dst->minY = src->minY;
+    dst->maxY = src->maxY;
+    dst->maxX = src->maxX;
     dst->dist = src->dist;
     dst->minDist = src->minDist;
 }
@@ -249,7 +251,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
     struct MBR *current = branchList->activeNext;
     double minimum_minMaxDist = branchList->dist;
 
-    // update dist for the nearest neighbor with [strategy 2], for pruning in the child node
+    // update dist for the furthest nearest neighbor with [strategy 2], for pruning in the child node
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
     if (nearest->dist > minimum_minMaxDist) {
         nearest->dist = minimum_minMaxDist;
@@ -316,7 +318,64 @@ struct Node getChildNode(struct MBR r) {
     return result;
 }
 
-void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel, int k) {
+void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
+    /**
+     *  TODO
+     *  this function will add the object to the into the linked list and keep the list sorted
+     * */
+    struct MBR *previous, *current;
+    struct MBR *copyOfObject; // to not mess up with a the node list, create a new object for the NNList
+
+    copyOfObject = (struct MBR *)malloc(sizeof(struct MBR));
+    copy(object,copyOfObject);
+    printf("line 331 id=%ld\n",object->nodeno);
+
+    if (listSize == 1){
+        struct MBR *oldHead;
+        oldHead = listHead;
+        *listHead = *copyOfObject;
+        free(oldHead);
+    } else {
+        previous = listHead;
+        current = listHead->next;
+        for (int i=0; i<listSize-1; i++){
+            if(copyOfObject->dist > current->dist){
+                if (i==0){ // means the new object is the new list head
+                    copyOfObject->next = current;
+                    *listHead = *copyOfObject;
+                    free(previous);
+                } else {
+                    copyOfObject->next = current;
+                    previous->next = copyOfObject;
+
+                    struct MBR *oldHead;
+                    oldHead = listHead;
+                    *listHead = *(oldHead->next);
+                    free(oldHead);
+                }
+                break;
+            }
+
+            if (i == listSize-2){
+                // means the new object should be the end of the list
+                current->next = copyOfObject;
+
+                struct MBR *oldHead;
+                oldHead = listHead;
+                *listHead = *(oldHead->next);
+                free(oldHead);
+            } else {
+                // if the for loop is not break, go to next neighbor in the list
+                previous = previous->next;
+                current = current->next;
+            }
+        }
+    }
+
+
+}
+
+void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearestListHead, int depth, int clevel, int k) {
     /**
      * TODO
      * recursive function using the same algorithm given in the paper
@@ -334,15 +393,9 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
             // for an object in leaf-node, no need to store its minMaxDist
             currentMBR.dist = minDist(currentMBR, p);
             currentMBR.minDist = minDist(currentMBR, p);
-            if (currentMBR.dist < nearest->dist) {
+            if (currentMBR.dist < nearestListHead->dist) {
                 // update nearest
-                nearest->nodeno = currentMBR.nodeno;
-                nearest->dist = currentMBR.dist;
-                nearest->minDist = nearest->dist;
-                nearest->minX = currentMBR.minX;
-                nearest->maxX = currentMBR.maxX;
-                nearest->minY = currentMBR.minY;
-                nearest->maxY = currentMBR.maxY;
+                addObjectToList(&currentMBR, nearestListHead, k);
             }
             if (i != currentNode.count - 1) {  // update currentMBR if it's not the last mbr in the list
                 currentMBR = *(currentMBR.next);
@@ -352,14 +405,14 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
     } else {
         genBranchList(p, currentNode, &branchListHead);
         sortBranchList(&branchListHead, currentNode.count);
-        count = pruneBranchList(p, currentNode.count, &branchListHead, nearest);
+        count = pruneBranchList(p, currentNode.count, &branchListHead, nearestListHead);
 
         struct MBR current = branchListHead;
         // go through each MBR in the branchList
         for (int j = 0; j < count; j++) {
             newNode = getChildNode(current);   // get child node of the mbr
-            NNSearch(newNode, p, nearest, depth, clevel + 1); // recursively calling NNSearch on child node
-            count = pruneBranchList(p, count, &branchListHead, nearest);
+            NNSearch(newNode, p, nearestListHead, depth, clevel + 1, k); // recursively calling NNSearch on child node
+            count = pruneBranchList(p, count, &branchListHead, nearestListHead);
 
             if (j != count - 1) {    // update current if it's not the last mbr in the active branch list
                 current = *(current.activeNext);
@@ -393,7 +446,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         targetPoint.x = x;
         targetPoint.y = y;
 
-        // initialize the nnList
+        // initialize the nnList, we'll keep the list in descending order
         nearestNeighborList = (struct MBR *) malloc(sizeof(struct MBR));
         current = nearestNeighborList;
         for (int i = 0; i < k; i++) {
@@ -412,14 +465,18 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
 
         NNSearch(rootNode, targetPoint, nearestNeighborList, depth, 0, k);
 
+        // form the output string
         resultString = (char *) malloc(0);
         current = nearestNeighborList;
+
         for (int j = 0; j < k; j++) {
             // form a newLine for the current neighbor
-            char *newLine = sqlite3_mprintf("id: %ld | minX: %f | maxX: %f | minY: %f | maxY: %f\n",
+
+            char *newLine = sqlite3_mprintf("id: %ld | minX: %f | maxX: %f | minY: %f | maxY: %f | dist: %f\n",
                                             current->nodeno,
                                             current->minX, current->maxX,
-                                            current->minY, current->maxY
+                                            current->minY, current->maxY,
+                                            current->dist
             );
             char *oldString = resultString;                         //copy the pointer of the old string
             size_t oldSize = strlen(oldString);                     // size of the oldString
@@ -470,10 +527,10 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
                 intString = '\0';          // add the null byte at the end
                 if (i == 0) {
                     // if this mbr is the head mbr in the list
-                    mbrPtr = malloc(sizeof(struct MBR));       // create a mbr
+                    mbrPtr = (struct MBR*)malloc(sizeof(struct MBR));       // create a mbr
                     targetNodePtr->MBRListHead = mbrPtr;       // add it to the head of the list
                 } else {
-                    mbrPtr->next = malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
+                    mbrPtr->next = (struct MBR*)malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
                     mbrPtr->activeNext = mbrPtr->next;         // add it to the active list as well
                     mbrPtr = mbrPtr->next;
                 }
