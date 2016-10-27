@@ -177,7 +177,6 @@ double minMaxDist(struct MBR r, struct Point p) {
 
 void genBranchList(struct Point p, struct Node node, struct MBR *branchList) {
     /**
-     * TODO
      * function will iterate through all the MBRs in the node and assign each MBR its mindist and minmaxdist
      * then assign branchList to the head of this list
      */
@@ -207,7 +206,7 @@ void copy(struct MBR *src, struct MBR *dst) {
 
 void sortBranchList(struct MBR *branchList, int listLength) {
     /**
-     * TODO
+     *
      * this function will sort the branchList based on the dist attribute of each MBR, using bubble sort
      *
      **/
@@ -241,7 +240,7 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 
 int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest) {
     /**
-     *TODO
+     *
      * this function will prune the list and return the number of MBRs left in the pruned list
      *
      * */
@@ -253,8 +252,10 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
 
     // update dist for the furthest nearest neighbor with [strategy 2], for pruning in the child node
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
-    if (nearest->dist > minimum_minMaxDist) {
-        nearest->dist = minimum_minMaxDist;
+    if (nearest->dist < 2000000){
+        if (nearest->dist > minimum_minMaxDist) {
+            nearest->dist = minimum_minMaxDist;
+        }
     }
 
 
@@ -277,7 +278,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
 
 struct Node getChildNode(struct MBR r) {
     /***
-     * TODO
+     *
      * This function get all the child MBRs inside parent MBR r, return the result as a struct Node.
      *
      **/
@@ -320,7 +321,7 @@ struct Node getChildNode(struct MBR r) {
 
 void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
     /**
-     *  TODO
+     *
      *  this function will add the object to the into the linked list and keep the list sorted
      * */
     struct MBR *previous, *current;
@@ -328,42 +329,40 @@ void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
 
     copyOfObject = (struct MBR *)malloc(sizeof(struct MBR));
     copy(object,copyOfObject);
-    printf("line 331 id=%ld\n",object->nodeno);
 
     if (listSize == 1){
-        struct MBR *oldHead;
-        oldHead = listHead;
-        *listHead = *copyOfObject;
-        free(oldHead);
+        copy(copyOfObject,listHead);
+        free(copyOfObject);
     } else {
         previous = listHead;
         current = listHead->next;
         for (int i=0; i<listSize-1; i++){
             if(copyOfObject->dist > current->dist){
                 if (i==0){ // means the new object is the new list head
-                    copyOfObject->next = current;
-                    *listHead = *copyOfObject;
-                    free(previous);
+                    copy(copyOfObject,listHead);
+                    free(copyOfObject);
                 } else {
                     copyOfObject->next = current;
                     previous->next = copyOfObject;
 
-                    struct MBR *oldHead;
-                    oldHead = listHead;
-                    *listHead = *(oldHead->next);
-                    free(oldHead);
+                    struct MBR *newHead;
+                    newHead = listHead->next;
+                    copy(listHead,newHead);
+                    listHead->next = newHead->next;
+                    free(newHead);
                 }
                 break;
             }
 
             if (i == listSize-2){
-                // means the new object should be the end of the list
+                // means the new object should be at the end of the list
                 current->next = copyOfObject;
 
-                struct MBR *oldHead;
-                oldHead = listHead;
-                *listHead = *(oldHead->next);
-                free(oldHead);
+                struct MBR *newHead;
+                newHead = listHead->next;
+                copy(listHead,newHead);
+                listHead->next = newHead->next;
+                free(newHead);
             } else {
                 // if the for loop is not break, go to next neighbor in the list
                 previous = previous->next;
@@ -377,7 +376,7 @@ void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearestListHead, int depth, int clevel, int k) {
     /**
-     * TODO
+     *
      * recursive function using the same algorithm given in the paper
      *
      * */
@@ -472,28 +471,35 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         for (int j = 0; j < k; j++) {
             // form a newLine for the current neighbor
 
-            char *newLine = sqlite3_mprintf("id: %ld | minX: %f | maxX: %f | minY: %f | maxY: %f | dist: %f\n",
+            char *newLine = (char *)sqlite3_mprintf("id: %ld | minX: %f | maxX: %f | minY: %f | maxY: %f | dist: %f\n",
                                             current->nodeno,
                                             current->minX, current->maxX,
                                             current->minY, current->maxY,
                                             current->dist
             );
-            char *oldString = resultString;                         //copy the pointer of the old string
-            size_t oldSize = strlen(oldString);                     // size of the oldString
-            size_t increaseSize = strlen(newLine);                  // size of the newString
-            resultString = (char *) malloc(oldSize + increaseSize + 1);  // +1 is for the NULL byte
-            memcpy(resultString, oldString, oldSize);                 // copy the oldString to the resultString
-            memcpy(resultString + oldSize, newLine, increaseSize + 1);    // append the newString to the end
+            if(j!=0) {
+                char *oldString = resultString;                         //copy the pointer of the old string
+                size_t oldSize = strlen(oldString);                     // size of the oldString
+                size_t increaseSize = strlen(newLine);                  // size of the newString
 
-            sqlite3_free(newLine);
-            free(oldString);
+                resultString = (char *) malloc(oldSize + increaseSize + 1);  // +1 is for the NULL byte
+                memcpy(resultString, oldString, oldSize);                 // copy the oldString to the resultString
+                memcpy(resultString + oldSize, newLine, increaseSize + 1);    // append the newString to the end
+
+                sqlite3_free(newLine);
+                free(oldString);
+            } else {
+                resultString = (char *) malloc(strlen(newLine)+1);
+                memcpy(resultString, newLine, strlen(newLine)+1);
+                sqlite3_free(newLine);
+            }
 
             // if current is the end of the list, go to next neighbor
             if (j != k - 1) {
                 current = current->next;
             }
         }
-
+        //printf("line 495\n%s",resultString);
         // return the output string
         sqlite3_result_text(context, resultString, (int) strlen(resultString), SQLITE_TRANSIENT);
         free(resultString);
