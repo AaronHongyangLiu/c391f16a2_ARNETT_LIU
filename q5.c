@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     }
 
     float total_std = 0, total_rtree = 0;
-    for (int i = 0; i < MAX_BOUNDING_SQUARES; i++) {
+    for (int i = 0; i < QUERY_RUNS; i++) {
         // randomly generates the bottom left coordinate of the new box
         double x = rand() % (1000 - side_length_int + 1); // random integer between 0 - 1000 specifying X coord
         double y = rand() % (1000 - side_length_int + 1); // random integer between 0 - 1000 specifying Y coord
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
         double maxY = y + side_length;
 
         double total_time_std = 0, total_time_rtree = 0;
-        for (int j = 0; j < QUERY_RUNS; j++) {
+        for (int j = 0; j < MAX_BOUNDING_SQUARES; j++) {
             total_time_std += time_query(&db, minX, maxX, minY, maxY, 0);
             total_time_rtree += time_query(&db, minX, maxX, minY, maxY, 1);
         }
@@ -119,16 +119,15 @@ double time_query(sqlite3 **db_ptr, double min_Xi, double max_Xi, double min_Yi,
     strcat(sql_stmt, stmt_4);
     strcat(sql_stmt, max_Y);
 
+    clock_t before, after, diff;
+
+    before = clock();// start timer
     // test if the query can be prepared
     rc = sqlite3_prepare_v2(*db_ptr, sql_stmt, -1, &stmt, 0);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(*db_ptr));
         return 1;
     }
-
-    clock_t before, after, diff;
-
-    before = clock();// start timer
     sqlite3_exec(*db_ptr,sql_stmt,NULL,NULL,NULL);
     after = clock(); // stop timer
 

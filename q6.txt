@@ -1,4 +1,3 @@
-http://www.tablesgenerator.com/text_tables
 
 +----------------+--------------------------------------------------------------------------+
 |                |                                Side Length                               |
@@ -10,10 +9,10 @@ http://www.tablesgenerator.com/text_tables
 | Standard Index | 10.373439 ms | 10.428750 ms | 10.996775 ms | 11.846060 ms | 12.052210 ms |
 +----------------+--------------+--------------+--------------+--------------+--------------+
 
-Short answer here:
-Average runtime of both R-tree and Standard Index will increase as the side length increases.
+
+The average runtime of both R-tree and Standard Index will increase as the side length increases.
 For R-tree, the runtime increases a relatively large amount as the side length increases.
-For Strandard Index, the runtime increases a relatively small amount as the side length increases.
-Average runtime of R-tree is always a lot better than the average runtime of Standard Index.
+For Standard Index, the runtime increases a relatively small amount as the side length increases,
+however, the average runtime of R-tree is always a lot better than the average runtime of Standard Index.
 
 These queries were ran on a 2.9Ghz Macbook Pro running OS X El Capitan.

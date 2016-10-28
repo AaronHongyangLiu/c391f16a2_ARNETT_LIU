@@ -12,7 +12,8 @@ Q4
         ```
         ./a.out <database file> <x1> <y1> <x2> <y2> <POI class name>
         ```
-     where x1 and y1 are the top left coordinates and x2, y2 are the bottom right coordinates of a rectangle
+     Where x1 and y1 are the top left coordinates and x2, y2 are the bottom right coordinates of a rectangle.
+     We assume that the objects must be fully contained by the bounding rectangle specs given.
 
 
 Q5
@@ -26,6 +27,7 @@ Q5
         ./a.out <database file> <side length>
         ```
 
+    In this question, we assume that the objects being found must be fully contained by the bounding rectangle.
 
 Q7
     to compile q7.c use the following command line instruction:
