@@ -34,7 +34,7 @@ void copy(struct MBR *src, struct MBR *dst);
 
 void sortBranchList(struct MBR *branchList, int listLength);
 
-int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest);
+int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int upward);
 
 struct Node getChildNode(struct MBR r);
 
@@ -241,7 +241,7 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 
 }
 
-int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest) {
+int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int upward) {
     /**
      *
      * this function will prune the list and return the number of MBRs left in the pruned list
@@ -254,9 +254,11 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
     double minimum_minMaxDist = branchList->dist;
 
     // update dist for the nearest neighbor with [strategy 2], for pruning in the child node
-    // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)  
-    if (nearest->dist > minimum_minMaxDist){
-        nearest->dist = minimum_minMaxDist;
+    // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
+    if (!upward) {
+        if (nearest->dist > minimum_minMaxDist) {
+            nearest->dist = minimum_minMaxDist;
+        }
     }
 
 
@@ -359,14 +361,14 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
     } else {
         genBranchList(p, currentNode, &branchListHead);
         sortBranchList(&branchListHead, currentNode.count);
-        count = pruneBranchList(p, currentNode.count, &branchListHead, nearest);
+        count = pruneBranchList(p, currentNode.count, &branchListHead, nearest, 0);
 
         struct MBR current = branchListHead;
         // go through each MBR in the branchList
         for (int j = 0; j < count; j++) {
             newNode = getChildNode(current);   // get child node of the mbr
             NNSearch(newNode, p, nearest, depth, clevel + 1); // recursively calling NNSearch on child node
-            count = pruneBranchList(p, count, &branchListHead, nearest);
+            count = pruneBranchList(p, count, &branchListHead, nearest, 1);
 
             if (j != count - 1) {    // update current if it's not the last mbr in the active branch list
                 current = *(current.activeNext);
