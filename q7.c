@@ -34,7 +34,7 @@ void copy(struct MBR *src, struct MBR *dst);
 
 void sortBranchList(struct MBR *branchList, int listLength);
 
-int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int upward);
+int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int afterRecursion);
 
 struct Node getChildNode(struct MBR r);
 
@@ -241,7 +241,7 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 
 }
 
-int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int upward) {
+int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int afterRecursion) {
     /**
      *
      * this function will prune the list and return the number of MBRs left in the pruned list
@@ -255,7 +255,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
 
     // update dist for the nearest neighbor with [strategy 2], for pruning in the child node
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
-    if (!upward) {
+    if (!afterRecursion) {
         if (nearest->dist > minimum_minMaxDist) {
             nearest->dist = minimum_minMaxDist;
         }
@@ -441,10 +441,10 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
                 intString = '\0';          // add the null byte at the end
                 if (i == 0) {
                     // if this mbr is the head mbr in the list
-                    mbrPtr = (struct MBR*)malloc(sizeof(struct MBR));       // create a mbr
+                    mbrPtr = (struct MBR *) malloc(sizeof(struct MBR));       // create a mbr
                     targetNodePtr->MBRListHead = mbrPtr;       // add it to the head of the list
                 } else {
-                    mbrPtr->next = (struct MBR*)malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
+                    mbrPtr->next = (struct MBR *) malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
                     mbrPtr->activeNext = mbrPtr->next;         // add it to the active list as well
                     mbrPtr = mbrPtr->next;
                 }

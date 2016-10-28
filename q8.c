@@ -238,7 +238,7 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 
 }
 
-int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int upward) {
+int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, struct MBR *nearest, int afterRecursion) {
     /**
      *
      * this function will prune the list and return the number of MBRs left in the pruned list
@@ -252,9 +252,9 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
 
     // update dist for the furthest nearest neighbor with [strategy 2], for pruning in the child node
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
-    if (!upward) {
-        if (nearest->dist < 2000000) {
-            if (nearest->dist > minimum_minMaxDist) {
+    if (!afterRecursion) {
+        if (nearest->dist < 2000000) {  // to make sure we have at least k objects in the list
+            if (nearest->dist > minimum_minMaxDist) {  // update the near last node
                 nearest->dist = minimum_minMaxDist;
                 nearest->nodeno = branchList->nodeno;
             }
@@ -474,7 +474,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         for (int j = 0; j < k; j++) {
             // form a newLine for the current neighbor
 
-            char *newLine = (char *)sqlite3_mprintf("id: %ld | minX: %f | maxX: %f | minY: %f | maxY: %f | dist: %f\n",
+            char *newLine = (char *)sqlite3_mprintf("id: %10ld | minX: %10f | maxX: %10f | minY: %10f | maxY: %10f | dist: %f\n",
                                             current->nodeno,
                                             current->minX, current->maxX,
                                             current->minY, current->maxY,
@@ -486,8 +486,8 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
                 size_t increaseSize = strlen(newLine);                  // size of the newString
 
                 resultString = (char *) malloc(oldSize + increaseSize + 1);  // +1 is for the NULL byte
-                memcpy(resultString, oldString, oldSize);                 // copy the oldString to the resultString
-                memcpy(resultString + oldSize, newLine, increaseSize + 1);    // append the newString to the end
+                memcpy(resultString, newLine, increaseSize);                 // copy the oldString to the resultString
+                memcpy(resultString + increaseSize, oldString, oldSize + 1);    // append the newString to the end
 
                 sqlite3_free(newLine);
                 free(oldString);
