@@ -2,6 +2,7 @@
 #include <sqlite3.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 sqlite3 *db; //the global database
 
@@ -46,6 +47,10 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv);
 
 void buildNode(char **ptrToString, struct Node *targetNodePtr);
 
+int isNumber(char number[]);
+
+int MAX_DIST = 2000000;
+
 int main(int argc, char **argv) {
     sqlite3_stmt *stmt; //the update statement
     int rc;
@@ -54,6 +59,29 @@ int main(int argc, char **argv) {
     if (argc != 5) {
         fprintf(stderr, "Usage: %s <database file> x y k\n", argv[0]);
         return (1);
+    }
+
+    // input validation
+    if ((atof(argv[2]) < 0) || (atof(argv[2]) > 1000)) {
+        fprintf(stderr, "x must be between 0 and 1000 [You entered %s]\n", argv[2]);
+        return 1;
+    }
+    if ((atof(argv[3]) < 0) || (atof(argv[3]) > 1000)) {
+        fprintf(stderr, "y must be between 0 and 1000 [You entered %s]\n", argv[3]);
+        return 1;
+    }
+    if (atoi(argv[4]) < 0) {
+        fprintf(stderr, "k must be a positive integer [You entered %s]\n", argv[4]);
+        return 1;
+    }
+
+    int valid_x = isNumber(argv[2]);
+    int valid_y = isNumber(argv[3]);
+    int valid_k = isNumber(argv[4]);
+
+    if ((!valid_x) || (!valid_y) || (!valid_k)) {
+        fprintf(stderr, "x, y and k must be numbers\n");
+        return 1;
     }
 
     // open the database
@@ -89,6 +117,16 @@ int main(int argc, char **argv) {
 
     //finalize a statement
     sqlite3_finalize(stmt);
+}
+
+// validates input -- from http://stackoverflow.com/questions/29248585/c-checking-command-line-argument-is-integer-or-not
+int isNumber(char number[]) {
+    for (int i = 0; number[i] != 0; i++) {
+        //if (number[i] > '9' || number[i] < '0')
+        if (!isdigit(number[i]))
+            return 0;
+    }
+    return 1;
 }
 
 char *getQuery(char *xString, char *yString, char *kString) {
@@ -253,7 +291,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
     // update dist for the furthest nearest neighbor with [strategy 2], for pruning in the child node
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
     if (!afterRecursion) {
-        if (nearest->dist < 2000000) {  // to make sure we have at least k objects in the list
+        if (nearest->dist < MAX_DIST) {  // to make sure we have at least k objects in the list
             if (nearest->dist > minimum_minMaxDist) {  // update the near last node
                 nearest->dist = minimum_minMaxDist;
                 nearest->nodeno = branchList->nodeno;
@@ -452,7 +490,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         nearestNeighborList = (struct MBR *) malloc(sizeof(struct MBR));
         current = nearestNeighborList;
         for (int i = 0; i < k; i++) {
-            current->dist = 2000000; // set this dist to be larger than the longest distance in a 1000*1000 grid.
+            current->dist = MAX_DIST; // set this dist to be larger than the longest distance in a 1000*1000 grid.
             current->nodeno = 0;
             current->next = (struct MBR *) malloc(sizeof(struct MBR));
 

@@ -2,6 +2,7 @@
 #include <sqlite3.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 sqlite3 *db; //the global database
 
@@ -44,6 +45,10 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv);
 
 void buildNode(char **ptrToString, struct Node *targetNodePtr);
 
+int isNumber(char number[]);
+
+int MAX_DIST = 2000000;
+
 int main(int argc, char **argv) {
     sqlite3_stmt *stmt; //the update statement
     int rc;
@@ -52,6 +57,24 @@ int main(int argc, char **argv) {
     if (argc != 4) {
         fprintf(stderr, "Usage: %s <database file> x y\n", argv[0]);
         return (1);
+    }
+
+    // input validation
+    if ((atof(argv[2]) < 0) || (atof(argv[2]) > 1000)) {
+        fprintf(stderr, "x must be between 0 and 1000 [You entered %s]\n", argv[2]);
+        return 1;
+    }
+    if ((atof(argv[3]) < 0) || (atof(argv[3]) > 1000)) {
+        fprintf(stderr, "y must be between 0 and 1000 [You entered %s]\n", argv[3]);
+        return 1;
+    }
+
+    int valid_x = isNumber(argv[2]);
+    int valid_y = isNumber(argv[3]);
+
+    if ((!valid_x) || (!valid_y)) {
+        fprintf(stderr, "x and y must both be numbers\n");
+        return 1;
     }
 
     // open the database
@@ -91,6 +114,16 @@ int main(int argc, char **argv) {
 
     //finalize a statement
     sqlite3_finalize(stmt);
+}
+
+// validates input -- from http://stackoverflow.com/questions/29248585/c-checking-command-line-argument-is-integer-or-not
+int isNumber(char number[]) {
+    for (int i = 0; number[i] != 0; i++) {
+        //if (number[i] > '9' || number[i] < '0')
+        if (!isdigit(number[i]))
+            return 0;
+    }
+    return 1;
 }
 
 char *getQuery(char *xString, char *yString) {
@@ -402,7 +435,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         targetPoint.y = y;
 
         // initialize the nn
-        nearestNeighbor.dist = 2000000; // set this dist to be larger than the longest distance in a 1000*1000 grid.
+        nearestNeighbor.dist = MAX_DIST; // set this dist to be larger than the longest distance in a 1000*1000 grid.
         nearestNeighbor.nodeno = 0;
 
         rootNode.nodeNo = 1; // root node has nodeno = 1;
