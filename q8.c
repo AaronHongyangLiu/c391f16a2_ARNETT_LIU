@@ -51,6 +51,48 @@ int isNumber(char number[]);
 
 int MAX_DIST = 2000000;
 
+int maxNumberOfObject(){
+    /** TODO */
+    sqlite3_stmt *stmt;
+    int rc; 
+    int result = -1;
+
+    char *query = "select count(id) from poi_index;"
+
+    // execute the query
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return result;
+    }
+
+
+    // display the query
+    if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        result = sqlite3_column_text(stmt, 0);
+    }
+
+    //finalize a statement
+    sqlite3_finalize(stmt);
+
+    return result
+ 
+}
+
+void sqlite_dist(){
+    /** TODO */
+}
+
+void printAllObjects(int x, int y){
+    /** TODO */
+    sqlite3_create_function(db, "dist", 6, SQLITE_UTF8, NULL, &sqlite_dist, NULL, NULL);
+
+    char *query = sqlite3_mprintf("select *, dist(minX, maxX, minY, maxY, %d, %d) as d\
+                                   from poi_index \
+                                   order by d DESC;", x, y);
+
+}
 int main(int argc, char **argv) {
     sqlite3_stmt *stmt; //the update statement
     int rc;
@@ -91,6 +133,16 @@ int main(int argc, char **argv) {
         sqlite3_close(db);
         return (1);
     }
+
+    // test if k >= number of objects we have in database
+    int maxK = maxNumberOfObjects();
+    if (maxK < 0){
+        return 1;
+    }
+    if (k >= maxK){
+        printAllObjects(argv[2],argv[3]);
+        printf("Note: we only have %d objects in the database\n", maxK);
+    };
 
 
     // create a function in sqlite3 that will return the nearest id of the neighbor
@@ -290,27 +342,26 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
 
     // update dist for the furthest nearest neighbor with [strategy 2], for pruning in the child node
     // if dist(Object) > minMaxDist(MBR) || dist(MBR) > minMaxDist(MBR)
-    if (!afterRecursion) {
-        if (nearest->dist < MAX_DIST) {  // to make sure we have at least k objects in the list
+    if (nearest->dist < MAX_DIST) {  // to make sure we have at least k objects in the list
+        if (!afterRecursion) {
             if (nearest->dist > minimum_minMaxDist) {  // update the near last node
                 nearest->dist = minimum_minMaxDist;
                 nearest->nodeno = branchList->nodeno;
             }
         }
-    }
 
+        for (int i = 0; i < (listLength) - 1; i++) {
+            // if minDist(MBR)> minDist(Object) || minDist(MBR) > minMaxDist(MBR)     [strategy 3 || 1 ]
+            if ((current->minDist > nearest->dist) || (current->minDist > minimum_minMaxDist)) {
+                previous->activeNext = current->activeNext;
+                length -= 1;
+            } else {
+                previous = current;
+            }
 
-    for (int i = 0; i < (listLength) - 1; i++) {
-        // if minDist(MBR)> minDist(Object) || minDist(MBR) > minMaxDist(MBR)     [strategy 3 || 1 ]
-        if ((current->minDist > nearest->dist) || (current->minDist > minimum_minMaxDist)) {
-            previous->activeNext = current->activeNext;
-            length -= 1;
-        } else {
-            previous = current;
-        }
-
-        if (i != (listLength) - 2) {
-            current = current->activeNext;
+            if (i != (listLength) - 2) {
+                current = current->activeNext;
+            }
         }
     }
 
@@ -385,10 +436,10 @@ void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
                 } else {
                     copyOfObject->next = current;
                     previous->next = copyOfObject;
-
+                    // change the list head
                     struct MBR *newHead;
                     newHead = listHead->next;
-                    copy(listHead,newHead);
+                    copy(newHead,listHead);
                     listHead->next = newHead->next;
                     free(newHead);
                 }
@@ -398,10 +449,10 @@ void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
             if (i == listSize-2){
                 // means the new object should be at the end of the list
                 current->next = copyOfObject;
-
+                // change the list head
                 struct MBR *newHead;
                 newHead = listHead->next;
-                copy(listHead,newHead);
+                copy(newHead,listHead);
                 listHead->next = newHead->next;
                 free(newHead);
             } else {
@@ -512,11 +563,11 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         for (int j = 0; j < k; j++) {
             // form a newLine for the current neighbor
 
-            char *newLine = (char *)sqlite3_mprintf("id: %10ld | minX: %10f | maxX: %10f | minY: %10f | maxY: %10f | dist: %f\n",
+            char *newLine = (char *)sqlite3_mprintf("ID: %10ld | minX: %10f | maxX: %10f | minY: %10f | maxY: %10f | dist: %14f | line: %d\n",
                                             current->nodeno,
                                             current->minX, current->maxX,
                                             current->minY, current->maxY,
-                                            current->dist
+                                            current->dist, k-j
             );
             if(j!=0) {
                 char *oldString = resultString;                         //copy the pointer of the old string
