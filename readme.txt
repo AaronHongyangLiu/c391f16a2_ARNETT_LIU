@@ -32,7 +32,7 @@ Q5
 Q7
     to compile q7.c use the following command line instruction:
         ```
-        gcc -g -std=c99 q7.c sqlite3.c -lpthread -ldl -DSQLITE_ENABLE_RTREE=1
+        gcc -g -std=c99 q7.c sqlite3.c nearestNeighbor.c nearestNeighbor.h -lpthread -ldl -DSQLITE_ENABLE_RTREE=1
         ```
 
     to execute use:
@@ -45,7 +45,7 @@ Q7
 Q8
     to compile q8.c use the following command line instruction:
         ```
-        gcc -g -std=c99 q8.c sqlite3.c -lpthread -ldl -DSQLITE_ENABLE_RTREE=1
+        gcc -g -std=c99 q8.c sqlite3.c nearestNeighbor.c nearestNeighbor.h -lpthread -ldl -DSQLITE_ENABLE_RTREE=1
         ```
 
     to execute use:
