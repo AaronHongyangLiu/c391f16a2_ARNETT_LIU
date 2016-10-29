@@ -51,48 +51,8 @@ int isNumber(char number[]);
 
 int MAX_DIST = 2000000;
 
-int maxNumberOfObject(){
-    /** TODO */
-    sqlite3_stmt *stmt;
-    int rc; 
-    int result = -1;
+int maxNumberOfObject();
 
-    char *query = "select count(id) from poi_index;"
-
-    // execute the query
-    rc = sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        return result;
-    }
-
-
-    // display the query
-    if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        result = sqlite3_column_text(stmt, 0);
-    }
-
-    //finalize a statement
-    sqlite3_finalize(stmt);
-
-    return result
- 
-}
-
-void sqlite_dist(){
-    /** TODO */
-}
-
-void printAllObjects(int x, int y){
-    /** TODO */
-    sqlite3_create_function(db, "dist", 6, SQLITE_UTF8, NULL, &sqlite_dist, NULL, NULL);
-
-    char *query = sqlite3_mprintf("select *, dist(minX, maxX, minY, maxY, %d, %d) as d\
-                                   from poi_index \
-                                   order by d DESC;", x, y);
-
-}
 int main(int argc, char **argv) {
     sqlite3_stmt *stmt; //the update statement
     int rc;
@@ -131,17 +91,17 @@ int main(int argc, char **argv) {
     if (rc) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
-        return (1);
+        return 1;
     }
 
-    // test if k >= number of objects we have in database
-    int maxK = maxNumberOfObjects();
+    // test if k > number of objects we have in database
+    int maxK = maxNumberOfObject();
     if (maxK < 0){
         return 1;
     }
-    if (k >= maxK){
-        printAllObjects(argv[2],argv[3]);
-        printf("Note: we only have %d objects in the database\n", maxK);
+    if (atoi(argv[4]) > maxK){
+        fprintf(stderr, "k value is too large, we only have %d objects in the database\n", maxK);
+        return 1;
     };
 
 
@@ -169,6 +129,38 @@ int main(int argc, char **argv) {
 
     //finalize a statement
     sqlite3_finalize(stmt);
+}
+
+int maxNumberOfObject(){
+    /**
+     * this func will return the maximum number of objects in the database
+     * */
+    
+    sqlite3_stmt *stmt;
+    int rc;
+    int result = -1;
+
+    char *query = "select count(id) from poi_index;";
+
+    // execute the query
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, 0);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return result;
+    }
+
+
+    // display the query
+    if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        result = atoi(sqlite3_column_text(stmt, 0));
+    }
+
+    //finalize a statement
+    sqlite3_finalize(stmt);
+
+    return result;
+
 }
 
 // validates input -- from http://stackoverflow.com/questions/29248585/c-checking-command-line-argument-is-integer-or-not
