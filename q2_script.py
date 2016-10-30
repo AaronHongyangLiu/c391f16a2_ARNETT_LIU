@@ -1,7 +1,7 @@
 def calculate_increasing_area(original_box, new_box):
     '''
     Function calculates the overall change in area given an original box and a box to engulf
-    param: original_box the existing MBR or Node. Dimentions are [x1,y1,x2,y2] - top left, bottom right
+    param: original_box the existing MBR or Node. Dimensions are [x1,y1,x2,y2] - top left, bottom right
     param: new_box is the box to be engulfed by the original_box. Given as [x1,y1,x2,y2] - top left, bottom right
     '''
     original_box_area = calculate_area(original_box)
@@ -18,7 +18,7 @@ def calculate_increasing_area(original_box, new_box):
 
 
 def calculate_area(box):
-    return ((box[2] - box[0]) * (box[1] - box[3]))  # width * height
+    return (box[2] - box[0]) * (box[1] - box[3])  # width * height
 
 
 

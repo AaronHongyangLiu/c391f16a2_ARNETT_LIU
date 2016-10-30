@@ -52,4 +52,4 @@ Q8
         ```
         ./a.out <database file> x y k
         ```
-	where x,y are the coordinates of the point, and k is the parameter to require the program return k nearest neightbors. we choose to use the minDist as the distance between a Point and an Object
+	where x,y are the coordinates of the point, and k is the parameter to require the program return k nearest neighbors. we choose to use the minDist as the distance between a Point and an Object

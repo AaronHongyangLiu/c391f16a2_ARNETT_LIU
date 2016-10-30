@@ -22,9 +22,9 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
                 inBracket = 1; // change the flag of whether we are inside a bracket to True
                 index = 0;     // initialize the index for the this number
                 targetNodePtr->count += 1; // increment the number of mbrs in the node
-                stringLength = 0;          // initialize the strlen fo the variable intString
+                stringLength = 0;          // initialize the strlen for the variable intString
                 intString = (char *) malloc(sizeof(char));
-                intString = '\0';          // add the null byte at the end
+//                intString = '\0';          // add the null byte at the end
                 if (i == 0) {
                     // if this mbr is the head mbr in the list
                     mbrPtr = (struct MBR *) malloc(sizeof(struct MBR));       // create a mbr
@@ -170,7 +170,7 @@ double minMaxDist(struct MBR r, struct Point p) {
     } else {
         rMx = r.maxX;
     }
-    // determin rMy
+    // determine rMy
     if (p.y >= ((r.minY + r.maxY) / 2)) {
         rMy = r.minY;
     } else {
@@ -283,7 +283,8 @@ int maxNumberOfObject() {
 
     // display the query
     if ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        result = atoi(sqlite3_column_text(stmt, 0));
+        const char *output = (const char *) sqlite3_column_text(stmt, 0); // cast to const char *
+        result = atoi(output);
     }
 
     //finalize a statement
