@@ -181,7 +181,9 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int 
             NNSearch(newNode, p, nearest, depth, clevel + 1); // recursively calling NNSearch on child node
             count = pruneBranchList(p, count, &branchListHead, nearest, 1);
 
-            if (j != count - 1) {    // update current if it's not the last mbr in the active branch list
+            freeList(newNode.MBRListHead, newNode.count);
+
+            if (j != count - 1 && current.activeNext) {    // update current if it's not the last mbr in the active branch list
                 current = *(current.activeNext);
             }
         }
@@ -222,6 +224,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         NNSearch(rootNode, targetPoint, &nearestNeighbor, depth, 0);
         // return the id of the nearest neighbor id
         sqlite3_result_int64(context, nearestNeighbor.nodeno);
+        freeList(rootNode.MBRListHead,rootNode.count);
     }
 }
 

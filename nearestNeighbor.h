@@ -51,6 +51,8 @@ int isNumber(char number[]);
 
 void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv);
 
+void freeList(struct MBR *listHead, int listSize);
+
 
 #endif //C391F16A2_ARNETT_LIU_NEARESTNEIGHBOR_H
 

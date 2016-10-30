@@ -28,11 +28,15 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
                 if (i == 0) {
                     // if this mbr is the head mbr in the list
                     mbrPtr = (struct MBR *) malloc(sizeof(struct MBR));       // create a mbr
+                    mbrPtr->activeNext = NULL;
+                    mbrPtr->next = NULL;
                     targetNodePtr->MBRListHead = mbrPtr;       // add it to the head of the list
                 } else {
                     mbrPtr->next = (struct MBR *) malloc(sizeof(struct MBR)); // add a new mbr to the end of the list
                     mbrPtr->activeNext = mbrPtr->next;         // add it to the active list as well
                     mbrPtr = mbrPtr->next;
+                    mbrPtr->activeNext = NULL;
+                    mbrPtr->next = NULL;
                 }
                 break;
 
@@ -254,8 +258,8 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 // validates input -- from http://stackoverflow.com/questions/29248585/c-checking-command-line-argument-is-integer-or-not
 int isNumber(char number[]) {
     for (int i = 0; number[i] != 0; i++) {
-        //if (number[i] > '9' || number[i] < '0')
-        if (!isdigit(number[i]))
+        //if (number[i] > '9' || number[i] < '0' || it's not a floating point)
+        if ((!isdigit(number[i])) && number[i] != '.')
             return 0;
     }
     return 1;
@@ -292,4 +296,21 @@ int maxNumberOfObject() {
 
     return result;
 
+}
+
+void freeList(struct MBR *listHead, int listSize) {
+    /**
+     * this function will free the linked list
+     * */
+
+    struct MBR *tmp;
+    for (int i = 0; i < listSize; i++) {
+        if (i != listSize - 1) {
+            tmp = listHead;
+            listHead = listHead->next;
+            free(tmp);
+        } else {
+            free(listHead);
+        }
+    }
 }

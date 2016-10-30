@@ -6,7 +6,7 @@ int pruneBranchList(struct Point p, int listLength, struct MBR *branchList, stru
 
 void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearest, int depth, int clevel, int k);
 
-void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize);
+void addObjectToList(struct MBR *object, struct MBR *listHead, int listSize);
 
 
 int main(int argc, char **argv) {
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
     // test if k > number of objects we have in database
     int maxK = maxNumberOfObject();
-    if (maxK < 0){
+    if (maxK < 0) {
         return 1;
     }
     if (atoi(argv[4]) > maxK) {
@@ -107,7 +107,7 @@ char *getQuery(char *xString, char *yString, char *kString) {
 }
 
 
-void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
+void addObjectToList(struct MBR *object, struct MBR *listHead, int listSize) {
     /**
      *
      *  this function will add the object to the into the linked list and keep the list sorted
@@ -115,19 +115,19 @@ void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
     struct MBR *previous, *current;
     struct MBR *copyOfObject; // to not mess up with a the node list, create a new object for the NNList
 
-    copyOfObject = (struct MBR *)malloc(sizeof(struct MBR));
-    copy(object,copyOfObject);
+    copyOfObject = (struct MBR *) malloc(sizeof(struct MBR));
+    copy(object, copyOfObject);
 
-    if (listSize == 1){
-        copy(copyOfObject,listHead);
+    if (listSize == 1) {
+        copy(copyOfObject, listHead);
         free(copyOfObject);
     } else {
         previous = listHead;
         current = listHead->next;
-        for (int i=0; i<listSize-1; i++){
-            if(copyOfObject->dist > current->dist){
-                if (i==0){ // means the new object is the new list head
-                    copy(copyOfObject,listHead);
+        for (int i = 0; i < listSize - 1; i++) {
+            if (copyOfObject->dist > current->dist) {
+                if (i == 0) { // means the new object is the new list head
+                    copy(copyOfObject, listHead);
                     free(copyOfObject);
                 } else {
                     copyOfObject->next = current;
@@ -135,20 +135,20 @@ void addObjectToList(struct MBR * object, struct MBR *listHead, int listSize){
                     // change the list head
                     struct MBR *newHead;
                     newHead = listHead->next;
-                    copy(newHead,listHead);
+                    copy(newHead, listHead);
                     listHead->next = newHead->next;
                     free(newHead);
                 }
                 break;
             }
 
-            if (i == listSize-2){
+            if (i == listSize - 2) {
                 // means the new object should be at the end of the list
                 current->next = copyOfObject;
                 // change the list head
                 struct MBR *newHead;
                 newHead = listHead->next;
-                copy(newHead,listHead);
+                copy(newHead, listHead);
                 listHead->next = newHead->next;
                 free(newHead);
             } else {
@@ -200,7 +200,10 @@ void NNSearch(struct Node currentNode, struct Point p, struct MBR *nearestListHe
             NNSearch(newNode, p, nearestListHead, depth, clevel + 1, k); // recursively calling NNSearch on child node
             count = pruneBranchList(p, count, &branchListHead, nearestListHead, 1);
 
-            if (j != count - 1) {    // update current if it's not the last mbr in the active branch list
+            freeList(newNode.MBRListHead, newNode.count);
+
+            if (j != count - 1 &&
+                current.activeNext) {    // update current if it's not the last mbr in the active branch list
                 current = *(current.activeNext);
             }
         }
@@ -235,11 +238,12 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         // initialize the nnList, we'll keep the list in descending order
         nearestNeighborList = (struct MBR *) malloc(sizeof(struct MBR));
         current = nearestNeighborList;
+        current->next = NULL;
         for (int i = 0; i < k; i++) {
             current->dist = MAX_DIST; // set this dist to be larger than the longest distance in a 1000*1000 grid.
             current->nodeno = 0;
             current->next = (struct MBR *) malloc(sizeof(struct MBR));
-
+            current->next ->next = NULL;
             // if current is the end of the list, go to next neighbor
             if (i != k - 1) {
                 current = current->next;
@@ -258,13 +262,14 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         for (int j = 0; j < k; j++) {
             // form a newLine for the current neighbor
 
-            char *newLine = (char *)sqlite3_mprintf("ID: %10ld | minX: %10f | maxX: %10f | minY: %10f | maxY: %10f | dist: %14f | line: %d\n",
-                                            current->nodeno,
-                                            current->minX, current->maxX,
-                                            current->minY, current->maxY,
-                                            current->dist, k-j
+            char *newLine = (char *) sqlite3_mprintf(
+                    "ID: %10ld | minX: %10f | maxX: %10f | minY: %10f | maxY: %10f | dist: %14f | line: %d\n",
+                    current->nodeno,
+                    current->minX, current->maxX,
+                    current->minY, current->maxY,
+                    current->dist, k - j
             );
-            if(j!=0) {
+            if (j != 0) {
                 char *oldString = resultString;                         //copy the pointer of the old string
                 size_t oldSize = strlen(oldString);                     // size of the oldString
                 size_t increaseSize = strlen(newLine);                  // size of the newString
@@ -276,8 +281,8 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
                 sqlite3_free(newLine);
                 free(oldString);
             } else {
-                resultString = (char *) malloc(strlen(newLine)+1);
-                memcpy(resultString, newLine, strlen(newLine)+1);
+                resultString = (char *) malloc(strlen(newLine) + 1);
+                memcpy(resultString, newLine, strlen(newLine) + 1);
                 sqlite3_free(newLine);
             }
 
@@ -290,6 +295,8 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv) {
         // return the output string
         sqlite3_result_text(context, resultString, (int) strlen(resultString), SQLITE_TRANSIENT);
         free(resultString);
+        freeList(rootNode.MBRListHead, rootNode.count);
+        freeList(nearestNeighborList, k);
     }
 }
 
