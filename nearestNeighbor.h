@@ -47,7 +47,7 @@ void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv);
 
 void buildNode(char **ptrToString, struct Node *targetNodePtr);
 
-int isNumber(char number[]);
+int isNumber(char number[], int intFlag);
 
 void sqlite_nnsearch(sqlite3_context *context, int argc, sqlite3_value **argv);
 

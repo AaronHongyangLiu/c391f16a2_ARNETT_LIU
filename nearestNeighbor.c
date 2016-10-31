@@ -24,7 +24,6 @@ void buildNode(char **ptrToString, struct Node *targetNodePtr) {
                 targetNodePtr->count += 1; // increment the number of mbrs in the node
                 stringLength = 0;          // initialize the strlen for the variable intString
                 intString = (char *) malloc(sizeof(char));
-//                intString = '\0';          // add the null byte at the end
                 if (i == 0) {
                     // if this mbr is the head mbr in the list
                     mbrPtr = (struct MBR *) malloc(sizeof(struct MBR));       // create a mbr
@@ -256,11 +255,18 @@ void sortBranchList(struct MBR *branchList, int listLength) {
 
 
 // validates input -- from http://stackoverflow.com/questions/29248585/c-checking-command-line-argument-is-integer-or-not
-int isNumber(char number[]) {
+int isNumber(char number[], int intFlag) {
     for (int i = 0; number[i] != 0; i++) {
         //if (number[i] > '9' || number[i] < '0' || it's not a floating point)
-        if ((!isdigit(number[i])) && number[i] != '.')
-            return 0;
+        if (intFlag) {
+            if (!isdigit(number[i])) {
+                return 0;
+            }
+        } else {
+            if ((!isdigit(number[i])) && number[i] != '.') {
+                return 0;
+            }
+        }
     }
     return 1;
 }

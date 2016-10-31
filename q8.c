@@ -33,9 +33,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    int valid_x = isNumber(argv[2]);
-    int valid_y = isNumber(argv[3]);
-    int valid_k = isNumber(argv[4]);
+    int valid_x = isNumber(argv[2], 0);
+    int valid_y = isNumber(argv[3], 0);
+    int valid_k = isNumber(argv[4], 1);
 
     if ((!valid_x) || (!valid_y) || (!valid_k)) {
         fprintf(stderr, "x, y and k must be numbers\n");
@@ -53,11 +53,13 @@ int main(int argc, char **argv) {
     // test if k > number of objects we have in database
     int maxK = maxNumberOfObject();
     if (maxK < 0) {
+        sqlite3_close(db);
         return 1;
     }
     if (atoi(argv[4]) > maxK) {
         fprintf(stderr, "k value is too large, we only have %d objects in the database [You entered %s]\n", maxK,
                 argv[4]);
+        sqlite3_close(db);
         return 1;
     };
 

@@ -1,6 +1,21 @@
-Taylor Arnett & Hongyang Liu
 CMPUT 391 Assignment 2
 
+Taylor Arnett - 1364103
+Hongyang Liu - 1449237
+
+
+Q0
+
+    first run the following command to generate tsv files before reading q0.txt in sqlite3
+    '''
+    python q0.py poi.tsv
+    '''
+
+Q1
+    make sure you have ran `python q0.py poi.tsv` already before reading q1.txt in sqlite3
+
+
+Before running programs q4-q8, make sure you have populated the database using `q0.txt` and `q1.txt`
 
 Q4
     to compile q4.c use the following command line instruction:
@@ -52,4 +67,5 @@ Q8
         ```
         ./a.out <database file> x y k
         ```
-	where x,y are the coordinates of the point, and k is the parameter to require the program return k nearest neighbors. we choose to use the minDist as the distance between a Point and an Object
+	where x,y are the coordinates of the point, and k is the parameter to require the program return k nearest neighbors. 
+    We choose to use the minDist as the distance between a Point and an Object

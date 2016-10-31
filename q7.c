@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    int valid_x = isNumber(argv[2]);
-    int valid_y = isNumber(argv[3]);
+    int valid_x = isNumber(argv[2], 0);
+    int valid_y = isNumber(argv[3], 0);
 
     if ((!valid_x) || (!valid_y)) {
         fprintf(stderr, "x and y must both be numbers\n");
